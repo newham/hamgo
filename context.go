@@ -3,18 +3,33 @@ package hamgo
 import (
 	"bytes"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 )
 
+type IContext interface {
+	FormValue(key string) string
+	WriteBytes(b []byte)
+	WriteString(str string)
+	Text(code int)
+	Json(code int) error
+	JsonFrom(code int, data interface{}) error
+	Html(view string)
+	Redirect(code int, path string)
+	Code(statusCode int)
+	PathValue(key string) string
+	FormFile(fileName string) (multipart.File, *multipart.FileHeader, error)
+}
 type Context struct {
 	W          http.ResponseWriter
 	R          *http.Request
 	RespBuf    *bytes.Buffer
 	StatusCode int
+	PathParam  map[string]string
 }
 
-func NewContext(rw http.ResponseWriter, r *http.Request) *Context {
-	return &Context{rw, r, new(bytes.Buffer), http.StatusOK}
+func NewContext(rw http.ResponseWriter, r *http.Request, path string) IContext {
+	return &Context{rw, r, new(bytes.Buffer), http.StatusOK, Path(path).PathParam(r.URL.Path)}
 }
 
 func (ctx *Context) FormValue(key string) string {
@@ -60,9 +75,19 @@ func (ctx *Context) JsonFrom(code int, data interface{}) error {
 func (ctx *Context) Html(view string) {
 
 }
+
 func (ctx *Context) Redirect(code int, path string) {
 	http.Redirect(ctx.W, ctx.R, path, code)
 }
+
 func (ctx *Context) Code(statusCode int) {
 	ctx.StatusCode = statusCode
+}
+
+func (ctx *Context) PathValue(key string) string {
+	return ctx.PathParam[key]
+}
+
+func (ctx *Context) FormFile(fileName string) (multipart.File, *multipart.FileHeader, error) {
+	return ctx.R.FormFile(fileName)
 }

@@ -18,18 +18,16 @@ const (
 type Route struct {
 	http.Handler
 	Inject     int
-	Pattern    string
+	Path       string
 	Method     string
-	Resp       http.ResponseWriter
-	Req        *http.Request
-	Func       func(ctx *Context)
-	FuncBefore func(ctx *Context)
-	FuncAfter  func(ctx *Context)
+	W          http.ResponseWriter
+	R          *http.Request
+	Func       func(ctx IContext)
+	FuncBefore func(ctx IContext)
+	FuncAfter  func(ctx IContext)
+	PathKey    []string
 }
 
-func Handler(pattern, method string, handler func(ctx *Context)) *Route {
-	return &Route{Inject: INJECT_NORMAL, Pattern: pattern, Method: method, Func: handler}
-}
 func filter(route *Route, r *http.Request) int {
 	if !strings.Contains(route.Method, r.Method) {
 		return FILTER_METHOD_ERROR
@@ -39,20 +37,21 @@ func filter(route *Route, r *http.Request) int {
 	// }
 	return FILTER_OK
 }
+
 func (route *Route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	switch filter(route, r) {
 	case FILTER_METHOD_ERROR:
 		rw.WriteHeader(http.StatusMethodNotAllowed)
-		rw.Write([]byte("Wrong Method"))
+		rw.Write([]byte("405 method not allowed"))
 		return
 	case FILTER_404_ERROR:
 		rw.WriteHeader(http.StatusNotFound)
-		rw.Write([]byte("<h1>404 Not found page</h1>"))
+		rw.Write([]byte("404 page not found"))
 		return
 	}
 
 	//instance context
-	ctx := NewContext(rw, r)
+	ctx := NewContext(rw, r, route.Path)
 	switch route.Inject {
 	case INJECT_NORMAL:
 		route.Func(ctx)
@@ -68,18 +67,22 @@ func (route *Route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		route.FuncAfter(ctx)
 	}
 
-	route.Resp = rw
-	route.Req = r
+	route.W = rw
+	route.R = r
 }
 
-func HandlerBefore(pattern, method string, handlerBefore func(ctx *Context), handler func(ctx *Context)) *Route {
-	return &Route{Inject: INJECT_BEFORE, Pattern: pattern, Method: method, Func: handler, FuncBefore: handlerBefore}
+func Handler(path string, method string, handler func(ctx IContext)) *Route {
+	return &Route{Inject: INJECT_NORMAL, Path: path, Method: method, Func: handler}
 }
 
-func HandlerAfter(pattern, method string, handler func(ctx *Context), handlerAfter func(ctx *Context)) *Route {
-	return &Route{Inject: INJECT_AFTER, Pattern: pattern, Method: method, Func: handler, FuncAfter: handlerAfter}
+func HandlerBefore(path, method string, handlerBefore func(ctx IContext), handler func(ctx IContext)) *Route {
+	return &Route{Inject: INJECT_BEFORE, Path: path, Method: method, Func: handler, FuncBefore: handlerBefore}
 }
 
-func HandlerBeforeAfter(pattern, method string, handlerBefore func(ctx *Context), handler func(ctx *Context), handlerAfter func(ctx *Context)) *Route {
-	return &Route{Inject: INJECT_BEFORE_AFTER, Pattern: pattern, Method: method, Func: handler, FuncBefore: handlerBefore, FuncAfter: handlerAfter}
+func HandlerAfter(path, method string, handler func(ctx IContext), handlerAfter func(ctx IContext)) *Route {
+	return &Route{Inject: INJECT_AFTER, Path: path, Method: method, Func: handler, FuncAfter: handlerAfter}
+}
+
+func HandlerBeforeAfter(path, method string, handlerBefore func(ctx IContext), handler func(ctx IContext), handlerAfter func(ctx IContext)) *Route {
+	return &Route{Inject: INJECT_BEFORE_AFTER, Path: path, Method: method, Func: handler, FuncBefore: handlerBefore, FuncAfter: handlerAfter}
 }
