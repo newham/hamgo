@@ -6,12 +6,32 @@ const (
 	DEFAULT_PORT = "8080"
 )
 
+type IServer interface {
+	RunAt(port string) *Server
+	Run() *Server
+	Get(path string, handler func(ctx IContext)) *Server
+	Post(path string, handler func(ctx IContext)) *Server
+	Put(path string, handler func(ctx IContext)) *Server
+	Delete(path string, handler func(ctx IContext)) *Server
+	Head(path string, handler func(ctx IContext)) *Server
+	GetBefore(path string, handlerBefore func(ctx IContext), handler func(ctx IContext)) *Server
+	GetAfter(path string, handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server
+	GetBeforeAfter(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server
+	PostBefore(path string, handlerBefore func(ctx IContext), handler func(ctx IContext)) *Server
+	PostAfter(path string, handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server
+	PostBeforeAfter(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server
+	Static(folder string) *Server
+	Handler(path string, handler func(ctx IContext), method string) *Server
+	HandlerBefore(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), method string) *Server
+	HandlerAfter(path string, handler func(ctx IContext), handlerAfter func(ctx IContext), method string) *Server
+	HandlerBeforeAfter(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), handlerAfter func(ctx IContext), method string) *Server
+}
 type Server struct {
 	Port string
 	Mux  *http.ServeMux
 }
 
-func NewServer() *Server {
+func NewServer() IServer {
 	return &Server{Mux: http.NewServeMux()}
 }
 func (s *Server) RunAt(port string) *Server {

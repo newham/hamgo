@@ -14,7 +14,6 @@ func (p Path) Root() string {
 	if i := strings.Index(path, PATH_PARAM_PREFIX); i > 1 {
 		root = path[0:i]
 	}
-	println("root:" + root)
 	return root
 }
 
@@ -23,7 +22,7 @@ func (p Path) PathParam(url string) map[string]string {
 	params := Path(url).Paths()
 	pathParam := make(map[string]string)
 	for i, param := range paths {
-		if strings.HasPrefix(param, PATH_PARAM_PREFIX) {
+		if strings.HasPrefix(param, PATH_PARAM_PREFIX) && len(params) > i {
 			pathParam[param[1:]] = params[i]
 		}
 	}

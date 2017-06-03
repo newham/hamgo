@@ -1,9 +1,9 @@
 package hamgo
 
-func New() *Server {
+func New() IServer {
 	return NewServer()
 }
 
-func Logger(configFile string) {
+func SetConfig(configFile string) {
 	NewConfig(configFile)
 }

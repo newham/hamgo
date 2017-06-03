@@ -26,9 +26,6 @@ type ConfigInterface interface {
 	DefaultInt64(key string, defaultval int64) int64
 	DefaultBool(key string, defaultval bool) bool
 	DefaultFloat(key string, defaultval float64) float64
-	//DIY(key string) (interface{}, error)
-	//GetSection(section string) (map[string]string, error)
-	//SaveConfigFile(filename string) error
 }
 
 type Key struct {

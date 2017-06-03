@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"hamgo"
 	"hamgo/test/controller"
 )
 
 func main() {
+	fmt.Println("run at 8087")
 	server := hamgo.New()
 	server.Static("public")
 	server.Get("/index/=model/=id", controller.Index)
