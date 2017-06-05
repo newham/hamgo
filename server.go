@@ -3,125 +3,216 @@ package hamgo
 import "net/http"
 
 const (
-	DEFAULT_PORT = "8080"
+	//DefaultPort : default port to listen
+	DefaultPort = "8080"
 )
 
-type IServer interface {
-	RunAt(port string) *Server
-	Run() *Server
-	Get(path string, handler func(ctx IContext)) *Server
-	Post(path string, handler func(ctx IContext)) *Server
-	Put(path string, handler func(ctx IContext)) *Server
-	Delete(path string, handler func(ctx IContext)) *Server
-	Head(path string, handler func(ctx IContext)) *Server
-	GetBefore(path string, handlerBefore func(ctx IContext), handler func(ctx IContext)) *Server
-	GetAfter(path string, handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server
-	GetBeforeAfter(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server
-	PostBefore(path string, handlerBefore func(ctx IContext), handler func(ctx IContext)) *Server
-	PostAfter(path string, handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server
-	PostBeforeAfter(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server
-	Static(folder string) *Server
-	Handler(path string, handler func(ctx IContext), method string) *Server
-	HandlerBefore(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), method string) *Server
-	HandlerAfter(path string, handler func(ctx IContext), handlerAfter func(ctx IContext), method string) *Server
-	HandlerBeforeAfter(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), handlerAfter func(ctx IContext), method string) *Server
+//Server :
+type Server interface {
+	//base
+	RunAt(port string) *WebServer
+	Run() *WebServer
+	GetPort() string
+	//method
+	Get(path string, handler func(ctx WebContext)) *WebServer
+	Post(path string, handler func(ctx WebContext)) *WebServer
+	Put(path string, handler func(ctx WebContext)) *WebServer
+	Delete(path string, handler func(ctx WebContext)) *WebServer
+	Head(path string, handler func(ctx WebContext)) *WebServer
+	//get inject
+	GetBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *WebServer
+	GetAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer
+	GetBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer
+	//post inject
+	PostBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *WebServer
+	PostAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer
+	PostBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer
+	//put inject
+	PutBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *WebServer
+	PutAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer
+	PutBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer
+	//delete inject
+	DeleteBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *WebServer
+	DeleteAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer
+	DeleteBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer
+	//head inject
+	HeadBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *WebServer
+	HeadAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer
+	HeadBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer
+	//static folder
+	Static(folder string) *WebServer
+	//common handler
+	Handler(path string, handler func(ctx WebContext), method string) *WebServer
+	HandlerBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), method string) *WebServer
+	HandlerAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext), method string) *WebServer
+	HandlerBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext), method string) *WebServer
 }
-type Server struct {
+
+//WebServer :
+type WebServer struct {
 	Port string
 	Mux  *http.ServeMux
 }
 
-func NewServer() IServer {
-	return &Server{Mux: http.NewServeMux()}
+//NewServer : creat a web server
+func newServer() Server {
+	return &WebServer{Mux: http.NewServeMux()}
 }
-func (s *Server) RunAt(port string) *Server {
+
+//RunAt : let server run at port
+func (s *WebServer) RunAt(port string) *WebServer {
 	s.Port = ":" + port
 	http.ListenAndServe(s.Port, s.Mux)
 	return s
 }
 
-func (s *Server) Run() *Server {
-	s.Port = ":" + DEFAULT_PORT
+//Run :
+func (s *WebServer) Run() *WebServer {
+	s.Port = ":" + DefaultPort
 	http.ListenAndServe(s.Port, s.Mux)
 	return s
 }
 
-func (s *Server) Get(path string, handler func(ctx IContext)) *Server {
+//GetPort :
+func (s *WebServer) GetPort() string {
+	return s.Port
+}
+
+//Get :
+func (s *WebServer) Get(path string, handler func(ctx WebContext)) *WebServer {
 	return s.Handler(path, handler, http.MethodGet)
 }
 
-func (s *Server) Post(path string, handler func(ctx IContext)) *Server {
+//Post :
+func (s *WebServer) Post(path string, handler func(ctx WebContext)) *WebServer {
 	return s.Handler(path, handler, http.MethodPost)
 }
 
-func (s *Server) Put(path string, handler func(ctx IContext)) *Server {
+//Put :
+func (s *WebServer) Put(path string, handler func(ctx WebContext)) *WebServer {
 	return s.Handler(path, handler, http.MethodPut)
 }
 
-func (s *Server) Delete(path string, handler func(ctx IContext)) *Server {
+//Delete :
+func (s *WebServer) Delete(path string, handler func(ctx WebContext)) *WebServer {
 	return s.Handler(path, handler, http.MethodDelete)
 }
 
-func (s *Server) Head(path string, handler func(ctx IContext)) *Server {
+//Head :
+func (s *WebServer) Head(path string, handler func(ctx WebContext)) *WebServer {
 	return s.Handler(path, handler, http.MethodHead)
 }
 
-func (s *Server) GetBefore(path string, handlerBefore func(ctx IContext), handler func(ctx IContext)) *Server {
+//GetBefore :
+func (s *WebServer) GetBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *WebServer {
 	return s.HandlerBefore(path, handlerBefore, handler, http.MethodGet)
 }
 
-func (s *Server) GetAfter(path string, handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server {
+//GetAfter :
+func (s *WebServer) GetAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer {
 	return s.HandlerAfter(path, handler, handlerAfter, http.MethodGet)
 }
 
-func (s *Server) GetBeforeAfter(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server {
+//GetBeforeAfter :
+func (s *WebServer) GetBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer {
 	return s.HandlerBeforeAfter(path, handlerBefore, handler, handlerAfter, http.MethodGet)
 }
 
 //PostBefore :
-func (s *Server) PostBefore(path string, handlerBefore func(ctx IContext), handler func(ctx IContext)) *Server {
+func (s *WebServer) PostBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *WebServer {
 	return s.HandlerBefore(path, handlerBefore, handler, http.MethodPost)
 }
 
 //PostAfter :
-func (s *Server) PostAfter(path string, handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server {
+func (s *WebServer) PostAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer {
 	return s.HandlerAfter(path, handler, handlerAfter, http.MethodPost)
 }
 
-func (s *Server) PostBeforeAfter(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), handlerAfter func(ctx IContext)) *Server {
+//PostBeforeAfter :
+func (s *WebServer) PostBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer {
 	return s.HandlerBeforeAfter(path, handlerBefore, handler, handlerAfter, http.MethodPost)
 }
 
-func (s *Server) Static(folder string) *Server {
+//PutBefore :
+func (s *WebServer) PutBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *WebServer {
+	return s.HandlerBefore(path, handlerBefore, handler, http.MethodGet)
+}
+
+//PutAfter :
+func (s *WebServer) PutAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer {
+	return s.HandlerAfter(path, handler, handlerAfter, http.MethodGet)
+}
+
+//PutBeforeAfter :
+func (s *WebServer) PutBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer {
+	return s.HandlerBeforeAfter(path, handlerBefore, handler, handlerAfter, http.MethodGet)
+}
+
+//DeleteBefore :
+func (s *WebServer) DeleteBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *WebServer {
+	return s.HandlerBefore(path, handlerBefore, handler, http.MethodGet)
+}
+
+//DeleteAfter :
+func (s *WebServer) DeleteAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer {
+	return s.HandlerAfter(path, handler, handlerAfter, http.MethodGet)
+}
+
+//DeleteBeforeAfter :
+func (s *WebServer) DeleteBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer {
+	return s.HandlerBeforeAfter(path, handlerBefore, handler, handlerAfter, http.MethodGet)
+}
+
+//HeadBefore :
+func (s *WebServer) HeadBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *WebServer {
+	return s.HandlerBefore(path, handlerBefore, handler, http.MethodGet)
+}
+
+//HeadAfter :
+func (s *WebServer) HeadAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer {
+	return s.HandlerAfter(path, handler, handlerAfter, http.MethodGet)
+}
+
+//HeadBeforeAfter :
+func (s *WebServer) HeadBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *WebServer {
+	return s.HandlerBeforeAfter(path, handlerBefore, handler, handlerAfter, http.MethodGet)
+}
+
+//Static :
+func (s *WebServer) Static(folder string) *WebServer {
 
 	s.Mux.Handle("/"+folder+"/", http.StripPrefix("/"+folder+"/", http.FileServer(http.Dir(folder))))
 	return s
 }
 
-func (s *Server) Handler(path string, handler func(ctx IContext), method string) *Server {
+//Handler :
+func (s *WebServer) Handler(path string, handler func(ctx WebContext), method string) *WebServer {
 
 	r := Handler(path, method, handler)
-	s.Mux.Handle(Path(path).Root(), r)
+	s.Mux.Handle(newPath(path).Route(), r)
 	return s
 }
 
-func (s *Server) HandlerBefore(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), method string) *Server {
+//HandlerBefore :
+func (s *WebServer) HandlerBefore(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), method string) *WebServer {
 
 	r := HandlerBefore(path, method, handlerBefore, handler)
-	s.Mux.Handle(Path(path).Root(), r)
+	s.Mux.Handle(newPath(path).Route(), r)
 	return s
 }
 
-func (s *Server) HandlerAfter(path string, handler func(ctx IContext), handlerAfter func(ctx IContext), method string) *Server {
+//HandlerAfter :
+func (s *WebServer) HandlerAfter(path string, handler func(ctx WebContext), handlerAfter func(ctx WebContext), method string) *WebServer {
 
 	r := HandlerAfter(path, method, handler, handlerAfter)
-	s.Mux.Handle(Path(path).Root(), r)
+	s.Mux.Handle(newPath(path).Route(), r)
 	return s
 }
 
-func (s *Server) HandlerBeforeAfter(path string, handlerBefore func(ctx IContext), handler func(ctx IContext), handlerAfter func(ctx IContext), method string) *Server {
+//HandlerBeforeAfter :
+func (s *WebServer) HandlerBeforeAfter(path string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext), method string) *WebServer {
 
 	r := HandlerBeforeAfter(path, method, handlerBefore, handler, handlerAfter)
-	s.Mux.Handle(Path(path).Root(), r)
+	s.Mux.Handle(newPath(path).Route(), r)
 	return s
 }

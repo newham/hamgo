@@ -3,17 +3,23 @@ package main
 import (
 	"fmt"
 	"hamgo"
-	"hamgo/test/controller"
+	"hamgo/example/controller"
 )
 
 func main() {
-	fmt.Println("run at 8087")
+
+	hamgo.UseConfig("./app.conf")
+	hamgo.UseSession(3600)
 	server := hamgo.New()
 	server.Static("public")
 	server.Get("/index/=model/=id", controller.Index)
 	server.Get("/index/hello/=model/=id", controller.Hello)
 	server.GetBefore("/json", controller.BeforeIndex, controller.Index)
 	server.Get("/page", controller.Page)
+	server.Get("/session", controller.Session)
 	server.Post("/", controller.Index)
-	server.RunAt("8087")
+	server.Get("/bind", controller.Bind)
+	fmt.Println("run at :" + hamgo.AppConfig.String("port"))
+	server.RunAt(hamgo.AppConfig.String("port"))
+
 }

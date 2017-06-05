@@ -39,7 +39,7 @@ type Config struct {
 
 var AppConfig ConfigInterface = nil
 
-func NewConfig(configFile string) {
+func newConfig(configFile string) {
 	if configFile == "" {
 		configFile = DEFALUT_CONFIG_FILE
 	}

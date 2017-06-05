@@ -1,9 +1,13 @@
 package hamgo
 
-func New() IServer {
-	return NewServer()
+func New() Server {
+	return newServer()
 }
 
-func SetConfig(configFile string) {
-	NewConfig(configFile)
+func UseConfig(configFile string) {
+	newConfig(configFile)
+}
+
+func UseSession(maxlifetime int64) {
+	newSession(maxlifetime)
 }
