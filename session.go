@@ -12,6 +12,12 @@ import (
 	"time"
 )
 
+const (
+	Second = 1
+	Minute = 60
+	Hour   = 60 * 60
+)
+
 type SessionManager struct {
 	cookieName  string     //private cookiename
 	lock        sync.Mutex // protects session

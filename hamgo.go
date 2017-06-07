@@ -11,3 +11,7 @@ func UseConfig(configFile string) {
 func UseSession(maxlifetime int64) {
 	newSession(maxlifetime)
 }
+
+func UseLogger(logFile string) {
+	newLogger(logFile)
+}

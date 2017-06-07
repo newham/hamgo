@@ -7,9 +7,8 @@ import (
 )
 
 func main() {
-
 	hamgo.UseConfig("./app.conf")
-	hamgo.UseSession(3600)
+	hamgo.UseSession(hamgo.Hour)
 	server := hamgo.New()
 	server.Static("public")
 	server.Get("/index/=model/=id", controller.Index)
