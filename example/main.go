@@ -7,8 +7,10 @@ import (
 )
 
 func main() {
+	hamgo.DeleteFile("./app.log")
 	hamgo.UseConfig("./app.conf")
 	hamgo.UseSession(hamgo.Hour)
+	hamgo.UseLogger("./app.log")
 	server := hamgo.New()
 	server.Static("public")
 	server.Get("/index/=model/=id", controller.Index)

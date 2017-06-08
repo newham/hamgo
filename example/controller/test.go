@@ -57,13 +57,15 @@ func Session(ctx hamgo.WebContext) {
 func Bind(ctx hamgo.WebContext) {
 	user := model.User{}
 	err := ctx.BindForm(&user)
-	// u := ctx.BindForm(&user).(*model.User)
-	// println("done UserName:" + u.UserName)
-	println("done old UserName:", user.UserName)
-	println("done old UserPassword:", user.UserPassword)
-	println("done old Age:", user.Age)
-	println("done old Email:", user.Email)
+
+	// println("done UserName:" + user.UserName)
+	hamgo.Log.Debug("done old UserName:%s", user.UserName)
+	hamgo.Log.Warn("UserPassword:%s", user.UserPassword)
+	hamgo.Log.Info("Age:%d", user.Age)
+	hamgo.Log.Error("Email:%s", user.Email)
+
 	if err != nil {
-		println(err.Error())
+		hamgo.Log.Error(err.Error())
+		// println(err.Error())
 	}
 }
