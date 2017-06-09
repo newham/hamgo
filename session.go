@@ -13,26 +13,28 @@ import (
 )
 
 const (
-	Second = 1
-	Minute = 60
-	Hour   = 60 * 60
+	second                = 1
+	minute                = 60
+	hour                  = 60 * 60
+	defaultSessionMaxTime = hour
+	confSessionMaxTime    = "session_max_time"
 )
 
-type SessionManager struct {
+type sessionManager struct {
 	cookieName  string     //private cookiename
 	lock        sync.Mutex // protects session
-	provider    SessionProvider
+	provider    sessionProvider
 	maxlifetime int64
 }
 
-func NewSessionManager(provideName, cookieName string, maxlifetime int64) (*SessionManager, error) {
+func newSessionManager(provideName, cookieName string, maxlifetime int64) (*sessionManager, error) {
 	provider, ok := provides[provideName]
 	if !ok {
 		return nil, fmt.Errorf("session: unknown provide %q (forgotten import?)", provideName)
 	}
-	return &SessionManager{provider: provider, cookieName: cookieName, maxlifetime: maxlifetime}, nil
+	return &sessionManager{provider: provider, cookieName: cookieName, maxlifetime: maxlifetime}, nil
 }
-func (manager *SessionManager) sessionId() string {
+func (manager *sessionManager) sessionID() string {
 	b := make([]byte, 32)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
 		return ""
@@ -40,12 +42,12 @@ func (manager *SessionManager) sessionId() string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-func (manager *SessionManager) SessionStart(w http.ResponseWriter, r *http.Request) (session Session) {
+func (manager *sessionManager) SessionStart(w http.ResponseWriter, r *http.Request) (session Session) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 	cookie, err := r.Cookie(manager.cookieName)
 	if err != nil || cookie.Value == "" {
-		sid := manager.sessionId()
+		sid := manager.sessionID()
 		session, _ = manager.provider.SessionInit(sid)
 		cookie := http.Cookie{Name: manager.cookieName, Value: url.QueryEscape(sid), Path: "/", HttpOnly: true, MaxAge: int(manager.maxlifetime)}
 		http.SetCookie(w, &cookie)
@@ -56,7 +58,7 @@ func (manager *SessionManager) SessionStart(w http.ResponseWriter, r *http.Reque
 	return
 }
 
-func (manager *SessionManager) GC() {
+func (manager *sessionManager) GC() {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 	manager.provider.SessionGC(manager.maxlifetime)
@@ -64,33 +66,33 @@ func (manager *SessionManager) GC() {
 }
 
 //Destroy sessionid
-func (manager *SessionManager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
+func (manager *sessionManager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie(manager.cookieName)
 	if err != nil || cookie.Value == "" {
 		return
-	} else {
-		manager.lock.Lock()
-		defer manager.lock.Unlock()
-		manager.provider.SessionDestroy(cookie.Value)
-		expiration := time.Now()
-		cookie := http.Cookie{Name: manager.cookieName, Path: "/", HttpOnly: true, Expires: expiration, MaxAge: -1}
-		http.SetCookie(w, &cookie)
 	}
+	manager.lock.Lock()
+	defer manager.lock.Unlock()
+	manager.provider.SessionDestroy(cookie.Value)
+	expiration := time.Now()
+	cookie = &http.Cookie{Name: manager.cookieName, Path: "/", HttpOnly: true, Expires: expiration, MaxAge: -1}
+	http.SetCookie(w, cookie)
+
 }
 
-type SessionProvider interface {
+type sessionProvider interface {
 	SessionInit(sid string) (Session, error)
 	SessionRead(sid string) (Session, error)
 	SessionDestroy(sid string) error
 	SessionGC(maxLifeTime int64)
 }
 
-var provides = make(map[string]SessionProvider)
+var provides = make(map[string]sessionProvider)
 
 // Register makes a session provider available by the provided name.
 // If a Register is called twice with the same name or if the driver is nil,
 // it panics.
-func Register(name string, provider SessionProvider) {
+func registSessionProvider(name string, provider sessionProvider) {
 	if provider == nil {
 		panic("session: Register provider is nil")
 	}
@@ -100,6 +102,7 @@ func Register(name string, provider SessionProvider) {
 	provides[name] = provider
 }
 
+//Session : Session to store server's key-values (based on cookies)
 type Session interface {
 	Set(key, value interface{}) error //set session value
 	Get(key interface{}) interface{}  //get session value
@@ -107,67 +110,63 @@ type Session interface {
 	SessionID() string                //back current sessionID
 }
 
-var pder = &Provider{list: list.New()}
+var pder = &provider{list: list.New()}
 
-type SessionStore struct {
+type sessionStore struct {
 	sid          string                      //session id唯一标示
 	timeAccessed time.Time                   //最后访问时间
 	value        map[interface{}]interface{} //session里面存储的值
 }
 
-func (st *SessionStore) Set(key, value interface{}) error {
+func (st *sessionStore) Set(key, value interface{}) error {
 	st.value[key] = value
 	pder.SessionUpdate(st.sid)
 	return nil
 }
 
-func (st *SessionStore) Get(key interface{}) interface{} {
+func (st *sessionStore) Get(key interface{}) interface{} {
 	pder.SessionUpdate(st.sid)
 	if v, ok := st.value[key]; ok {
 		return v
-	} else {
-		return nil
 	}
 	return nil
 }
 
-func (st *SessionStore) Delete(key interface{}) error {
+func (st *sessionStore) Delete(key interface{}) error {
 	delete(st.value, key)
 	pder.SessionUpdate(st.sid)
 	return nil
 }
 
-func (st *SessionStore) SessionID() string {
+func (st *sessionStore) SessionID() string {
 	return st.sid
 }
 
-type Provider struct {
+type provider struct {
 	lock     sync.Mutex               //用来锁
 	sessions map[string]*list.Element //用来存储在内存
 	list     *list.List               //用来做gc
 }
 
-func (pder *Provider) SessionInit(sid string) (Session, error) {
+func (pder *provider) SessionInit(sid string) (Session, error) {
 	pder.lock.Lock()
 	defer pder.lock.Unlock()
 	v := make(map[interface{}]interface{}, 0)
-	newsess := &SessionStore{sid: sid, timeAccessed: time.Now(), value: v}
+	newsess := &sessionStore{sid: sid, timeAccessed: time.Now(), value: v}
 	element := pder.list.PushBack(newsess)
 	pder.sessions[sid] = element
 	return newsess, nil
 }
 
-func (pder *Provider) SessionRead(sid string) (Session, error) {
+func (pder *provider) SessionRead(sid string) (Session, error) {
 	if element, ok := pder.sessions[sid]; ok {
-		return element.Value.(*SessionStore), nil
-	} else {
-		sess, err := pder.SessionInit(sid)
-		return sess, err
+		return element.Value.(*sessionStore), nil
 	}
-	return nil, nil
+	sess, err := pder.SessionInit(sid)
+	return sess, err
 }
 
-func (pder *Provider) SessionDestroy(sid string) error {
+func (pder *provider) SessionDestroy(sid string) error {
 	if element, ok := pder.sessions[sid]; ok {
 		delete(pder.sessions, sid)
 		pder.list.Remove(element)
@@ -176,7 +175,7 @@ func (pder *Provider) SessionDestroy(sid string) error {
 	return nil
 }
 
-func (pder *Provider) SessionGC(maxlifetime int64) {
+func (pder *provider) SessionGC(maxlifetime int64) {
 	pder.lock.Lock()
 	defer pder.lock.Unlock()
 
@@ -185,31 +184,31 @@ func (pder *Provider) SessionGC(maxlifetime int64) {
 		if element == nil {
 			break
 		}
-		if (element.Value.(*SessionStore).timeAccessed.Unix() + maxlifetime) < time.Now().Unix() {
+		if (element.Value.(*sessionStore).timeAccessed.Unix() + maxlifetime) < time.Now().Unix() {
 			pder.list.Remove(element)
-			delete(pder.sessions, element.Value.(*SessionStore).sid)
+			delete(pder.sessions, element.Value.(*sessionStore).sid)
 		} else {
 			break
 		}
 	}
 }
 
-func (pder *Provider) SessionUpdate(sid string) error {
+func (pder *provider) SessionUpdate(sid string) error {
 	pder.lock.Lock()
 	defer pder.lock.Unlock()
 	if element, ok := pder.sessions[sid]; ok {
-		element.Value.(*SessionStore).timeAccessed = time.Now()
+		element.Value.(*sessionStore).timeAccessed = time.Now()
 		pder.list.MoveToFront(element)
 		return nil
 	}
 	return nil
 }
 
-var Sessions *SessionManager
+var sessions *sessionManager
 
 func newSession(maxlifetime int64) {
 	pder.sessions = make(map[string]*list.Element, 0)
-	Register("memory", pder)
-	Sessions, _ = NewSessionManager("memory", "gosessionid", maxlifetime)
-	go Sessions.GC()
+	registSessionProvider("memory", pder)
+	sessions, _ = newSessionManager("memory", "gosessionid", maxlifetime)
+	go sessions.GC()
 }

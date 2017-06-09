@@ -2,44 +2,44 @@ package hamgo
 
 import "strings"
 
-type Path interface {
+type path interface {
 	Route() string
 	PathParam(url string) map[string]string
 	Paths() []string
 }
 
-type RoutePath string
+type routePath string
 
 const (
-	PathParamPrefix = "="
+	pathParamPrefix = "="
 )
 
-func newPath(p string) Path {
-	return RoutePath(p)
+func newPath(p string) path {
+	return routePath(p)
 }
 
-func (p RoutePath) Route() string {
+func (p routePath) Route() string {
 	path := string(p)
 	root := path
-	if i := strings.Index(path, PathParamPrefix); i > 1 {
+	if i := strings.Index(path, pathParamPrefix); i > 1 {
 		root = path[0:i]
 	}
 	return root
 }
 
-func (p RoutePath) PathParam(url string) map[string]string {
+func (p routePath) PathParam(url string) map[string]string {
 	paths := p.Paths()
-	params := RoutePath(url).Paths()
+	params := routePath(url).Paths()
 	pathParam := make(map[string]string)
 	for i, param := range paths {
-		if strings.HasPrefix(param, PathParamPrefix) && len(params) > i {
+		if strings.HasPrefix(param, pathParamPrefix) && len(params) > i {
 			pathParam[param[1:]] = params[i]
 		}
 	}
 	return pathParam
 }
 
-func (p RoutePath) Paths() []string {
+func (p routePath) Paths() []string {
 	path := string(p)
 	return strings.Split(strings.Trim(path, "/ "), "/")
 }

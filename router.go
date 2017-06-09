@@ -6,45 +6,42 @@ import (
 )
 
 const (
-	InjectNormal      = 1
-	InjectBefore      = 2
-	InjectAfter       = 3
-	InjectBeforeAfter = 4
-	FilterMethodError = 5
-	Filter404Error    = 6
-	FilterOk          = 7
+	injectNormal      = 1
+	injectBefore      = 2
+	injectAfter       = 3
+	injectBeforeAfter = 4
+	filterMethodError = 5
+	filter404Error    = 6
+	filterOk          = 7
 )
 
-type Route struct {
+type route struct {
 	http.Handler
 	Inject     int
 	Path       string
 	Method     string
 	W          http.ResponseWriter
 	R          *http.Request
-	Func       func(ctx WebContext)
-	FuncBefore func(ctx WebContext)
-	FuncAfter  func(ctx WebContext)
+	Func       func(ctx *WebContext)
+	FuncBefore func(ctx *WebContext)
+	FuncAfter  func(ctx *WebContext)
 	PathKey    []string
 }
 
-func filter(route *Route, r *http.Request) int {
+func filter(route *route, r *http.Request) int {
 	if !strings.Contains(route.Method, r.Method) {
-		return FilterMethodError
+		return filterMethodError
 	}
-	// else if _, ok := Paths[r.URL.String()]; !ok { //not exist url
-	// 	return FILTER_404_ERROR
-	// }
-	return FilterOk
+	return filterOk
 }
 
-func (route *Route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+func (route *route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	switch filter(route, r) {
-	case FilterMethodError:
+	case filterMethodError:
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 		rw.Write([]byte("405 method not allowed"))
 		return
-	case Filter404Error:
+	case filter404Error:
 		rw.WriteHeader(http.StatusNotFound)
 		rw.Write([]byte("404 page not found"))
 		return
@@ -53,15 +50,15 @@ func (route *Route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	//instance context
 	ctx := newWebContext(rw, r, route.Path)
 	switch route.Inject {
-	case InjectNormal:
+	case injectNormal:
 		route.Func(ctx)
-	case InjectBefore:
+	case injectBefore:
 		route.FuncBefore(ctx)
 		route.Func(ctx)
-	case InjectAfter:
+	case injectAfter:
 		route.Func(ctx)
 		route.FuncAfter(ctx)
-	case InjectBeforeAfter:
+	case injectBeforeAfter:
 		route.FuncBefore(ctx)
 		route.Func(ctx)
 		route.FuncAfter(ctx)
@@ -71,18 +68,18 @@ func (route *Route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	route.R = r
 }
 
-func Handler(path string, method string, handler func(ctx WebContext)) *Route {
-	return &Route{Inject: InjectNormal, Path: path, Method: method, Func: handler}
+func newRoute(path string, method string, handler func(ctx *WebContext)) *route {
+	return &route{Inject: injectNormal, Path: path, Method: method, Func: handler}
 }
 
-func HandlerBefore(path, method string, handlerBefore func(ctx WebContext), handler func(ctx WebContext)) *Route {
-	return &Route{Inject: InjectBefore, Path: path, Method: method, Func: handler, FuncBefore: handlerBefore}
+func newBeforeRoute(path, method string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) *route {
+	return &route{Inject: injectBefore, Path: path, Method: method, Func: handler, FuncBefore: handlerBefore}
 }
 
-func HandlerAfter(path, method string, handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *Route {
-	return &Route{Inject: InjectAfter, Path: path, Method: method, Func: handler, FuncAfter: handlerAfter}
+func newAfterRoute(path, method string, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) *route {
+	return &route{Inject: injectAfter, Path: path, Method: method, Func: handler, FuncAfter: handlerAfter}
 }
 
-func HandlerBeforeAfter(path, method string, handlerBefore func(ctx WebContext), handler func(ctx WebContext), handlerAfter func(ctx WebContext)) *Route {
-	return &Route{Inject: InjectBeforeAfter, Path: path, Method: method, Func: handler, FuncBefore: handlerBefore, FuncAfter: handlerAfter}
+func newBeforeAfterRoute(path, method string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) *route {
+	return &route{Inject: injectBeforeAfter, Path: path, Method: method, Func: handler, FuncBefore: handlerBefore, FuncAfter: handlerAfter}
 }

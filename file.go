@@ -3,10 +3,11 @@ package hamgo
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-func WriteString(filename string, content string) bool {
-	f := OpenFile(filename)
+func writeString(filename string, content string) bool {
+	f := openFile(filename)
 	if f == nil {
 		return false
 	}
@@ -20,8 +21,8 @@ func WriteString(filename string, content string) bool {
 	return true
 }
 
-func WriteBytes(filename string, content []byte) bool {
-	f := OpenFile(filename)
+func writeBytes(filename string, content []byte) bool {
+	f := openFile(filename)
 	if f == nil {
 		return false
 	}
@@ -35,7 +36,7 @@ func WriteBytes(filename string, content []byte) bool {
 	return true
 }
 
-func IsFileExist(filename string) bool {
+func isFileExist(filename string) bool {
 	var exist = true
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		exist = false
@@ -43,7 +44,7 @@ func IsFileExist(filename string) bool {
 	return exist
 }
 
-func DeleteFile(filename string) bool {
+func deleteFile(filename string) bool {
 	err := os.RemoveAll(filename)
 	if err != nil {
 		return false
@@ -51,10 +52,10 @@ func DeleteFile(filename string) bool {
 	return true
 }
 
-func OpenFile(filename string) *os.File {
+func openFile(filename string) *os.File {
 	var f *os.File
 	var err error
-	if !IsFileExist(filename) {
+	if !isFileExist(filename) {
 		err = os.MkdirAll(filepath.Dir(filename), 0755)
 		if err != nil {
 			println("mk dir failed ", filename, " failed,", err)
@@ -69,25 +70,16 @@ func OpenFile(filename string) *os.File {
 	return f
 }
 
-func FileSize(filename string) int64 {
-	f := OpenFile(filename)
-	if f == nil {
-		return -1
-	}
-	defer f.Close()
-
-	fs, err := f.Stat()
-	if err != nil {
-		return -1
-	}
-
-	return fs.Size()
-}
-
-func RenameFile(filename, newname string) bool {
+func renameFile(filename, newname string) bool {
 	err := os.Rename(filename, newname)
 	if err == nil {
 		return true
 	}
 	return false
+}
+
+func currentPath(filename string) string {
+	index := strings.LastIndex(filename, "/")
+	return filename[:index+1]
+
 }

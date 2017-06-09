@@ -2,15 +2,15 @@ package hamgo
 
 import "strconv"
 
-func Int64ToString(i int64) string {
+func int64ToString(i int64) string {
 	return strconv.FormatInt(i, 10)
 }
 
-func IntToString(i int) string {
+func intToString(i int) string {
 	return strconv.Itoa(i)
 }
 
-func StringToInt(str string, must int) int {
+func stringToInt(str string, must int) int {
 	value, err := strconv.Atoi(str)
 	if err != nil {
 		return must
@@ -18,7 +18,7 @@ func StringToInt(str string, must int) int {
 	return value
 }
 
-func StringToInt64(str string, must int64) int64 {
+func stringToInt64(str string, must int64) int64 {
 	value, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
 		return must
@@ -26,7 +26,7 @@ func StringToInt64(str string, must int64) int64 {
 	return value
 }
 
-func StringToFloat32(str string, must float32) float32 {
+func stringToFloat32(str string, must float32) float32 {
 	value, err := strconv.ParseFloat(str, 32)
 	if err != nil {
 		return must
@@ -34,7 +34,7 @@ func StringToFloat32(str string, must float32) float32 {
 	return float32(value)
 }
 
-func StringToFloat64(str string, must float64) float64 {
+func stringToFloat64(str string, must float64) float64 {
 	value, err := strconv.ParseFloat(str, 64)
 	if err != nil {
 		return must

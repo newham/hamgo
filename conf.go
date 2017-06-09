@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	DEFALUT_CONFIG_FILE = "conf/app.conf"
+	defaultConfFile = "conf/app.conf"
 )
 
-type ConfigInterface interface {
+type configInterface interface {
 	//Set(key, val string) error   // support section::key type in given key when using ini type.
 	String(key string) string    // support section::key type in key string when using ini and json type; Int,Int64,Bool,Float,DIY are same.
 	Strings(key string) []string //get string slice
@@ -28,29 +28,26 @@ type ConfigInterface interface {
 	DefaultFloat(key string, defaultval float64) float64
 }
 
-type Key struct {
-	Name  string
-	Value string
-}
-type Config struct {
+type config struct {
 	File string
 	Keys map[string]string
 }
 
-var AppConfig ConfigInterface = nil
+//Conf : user can get config items
+var Conf configInterface
 
 func newConfig(configFile string) {
 	if configFile == "" {
-		configFile = DEFALUT_CONFIG_FILE
+		configFile = defaultConfFile
 	}
-	config := &Config{configFile, make(map[string]string)}
+	config := &config{configFile, make(map[string]string)}
 	if err := config.Prase(); err != nil {
 		panic(err)
 	}
-	AppConfig = config
+	Conf = config
 }
 
-func (c *Config) Prase() error {
+func (c *config) Prase() error {
 	isEnd := false
 
 	f, err := os.Open(c.File)
@@ -90,73 +87,77 @@ func (c *Config) Prase() error {
 func isCommentOut(line string) bool {
 	if strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") || strings.HasPrefix(line, "//") || strings.HasPrefix(line, "*") || strings.HasPrefix(line, "[") {
 		return true
-	} else {
-		return false
 	}
+	return false
+
 }
 
-func (c *Config) String(key string) string {
+func (c *config) String(key string) string {
 	return c.Keys[key]
 }
-func (c *Config) Strings(key string) []string {
+func (c *config) Strings(key string) []string {
 	if c.Keys[key] == "" {
 		return make([]string, 0)
-	} else {
-		return strings.Split(c.Keys[key], " ")
 	}
+	return strings.Split(c.Keys[key], " ")
+
 }
-func (c *Config) Int(key string) (int, error) {
+func (c *config) Int(key string) (int, error) {
 	return strconv.Atoi(c.Keys[key])
 }
-func (c *Config) Int64(key string) (int64, error) {
+func (c *config) Int64(key string) (int64, error) {
 	return strconv.ParseInt(c.Keys[key], 10, 64)
 }
-func (c *Config) Bool(key string) (bool, error) {
+func (c *config) Bool(key string) (bool, error) {
 	return strconv.ParseBool(c.Keys[key])
 }
-func (c *Config) Float(key string) (float64, error) {
+func (c *config) Float(key string) (float64, error) {
 	return strconv.ParseFloat(c.Keys[key], 64)
 }
 
-func (c *Config) DefaultString(key string, defaultval string) string {
+func (c *config) DefaultString(key string, defaultval string) string {
 	if c.String(key) == "" {
 		return defaultval
-	} else {
-		return c.String(key)
 	}
+	return c.String(key)
+
 }
-func (c *Config) DefaultStrings(key string, defaultval []string) []string {
+func (c *config) DefaultStrings(key string, defaultval []string) []string {
 	if len(c.Strings(key)) < 1 {
 		return defaultval
-	} else {
-		return c.Strings(key)
 	}
+	return c.Strings(key)
+
 }
-func (c *Config) DefaultInt(key string, defaultval int) int {
-	if value, err := c.Int(key); err != nil {
+func (c *config) DefaultInt(key string, defaultval int) int {
+	value, err := c.Int(key)
+	if err != nil {
 		return defaultval
-	} else {
-		return value
 	}
+	return value
+
 }
-func (c *Config) DefaultInt64(key string, defaultval int64) int64 {
-	if value, err := c.Int64(key); err != nil {
+func (c *config) DefaultInt64(key string, defaultval int64) int64 {
+	value, err := c.Int64(key)
+	if err != nil {
 		return defaultval
-	} else {
-		return value
 	}
+	return value
+
 }
-func (c *Config) DefaultBool(key string, defaultval bool) bool {
-	if value, err := c.Bool(key); err != nil {
+func (c *config) DefaultBool(key string, defaultval bool) bool {
+	value, err := c.Bool(key)
+	if err != nil {
 		return defaultval
-	} else {
-		return value
 	}
+	return value
+
 }
-func (c *Config) DefaultFloat(key string, defaultval float64) float64 {
-	if value, err := c.Float(key); err != nil {
+func (c *config) DefaultFloat(key string, defaultval float64) float64 {
+	value, err := c.Float(key)
+	if err != nil {
 		return defaultval
-	} else {
-		return value
 	}
+	return value
+
 }

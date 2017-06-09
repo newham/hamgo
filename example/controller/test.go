@@ -4,18 +4,17 @@ import (
 	"hamgo"
 	"hamgo/example/model"
 	"strconv"
-	"time"
 )
 
-func Index(ctx hamgo.WebContext) {
+func Index(ctx *hamgo.WebContext) {
 	println("/index/")
 	println("model:" + ctx.PathParam("model"))
 	println("id:" + ctx.PathParam("id"))
-	ctx.WriteString(hamgo.AppConfig.String("index"))
+	ctx.WriteString(hamgo.Conf.String("index"))
 	ctx.Text(200)
 }
 
-func Hello(ctx hamgo.WebContext) {
+func Hello(ctx *hamgo.WebContext) {
 	println("/index/hello/")
 	println("model:" + ctx.PathParam("model"))
 	println("id:" + ctx.PathParam("id"))
@@ -23,27 +22,21 @@ func Hello(ctx hamgo.WebContext) {
 	ctx.Text(200)
 }
 
-func Json(ctx hamgo.WebContext) {
+func Json(ctx *hamgo.WebContext) {
 	ctx.WriteString("Json")
-	ctx.Json(200)
+	ctx.JSON(200)
 }
-func BeforeIndex(ctx hamgo.WebContext) {
+func BeforeIndex(ctx *hamgo.WebContext) {
 	ctx.WriteString("Before ")
 }
 
-func Page(ctx hamgo.WebContext) {
-	ctx.Html(nil, "view/index.html", "view/title.tmpl")
+func Page(ctx *hamgo.WebContext) {
+	ctx.HTML(nil, "view/index.html", "view/title.tmpl")
 }
 
-func Session(ctx hamgo.WebContext) {
+func Session(ctx *hamgo.WebContext) {
 	sess := ctx.GetSession()
-	createtime := sess.Get("createtime")
-	if createtime == nil {
-		sess.Set("createtime", time.Now().Unix())
-	} else if (createtime.(int64) + 360) < (time.Now().Unix()) {
-		hamgo.Sessions.SessionDestroy(ctx.W, ctx.R)
-		sess = hamgo.Sessions.SessionStart(ctx.W, ctx.R)
-	}
+
 	ct := sess.Get("countnum")
 	if ct == nil {
 		sess.Set("countnum", 1)
@@ -54,7 +47,7 @@ func Session(ctx hamgo.WebContext) {
 	ctx.Text(200)
 }
 
-func Bind(ctx hamgo.WebContext) {
+func Bind(ctx *hamgo.WebContext) {
 	user := model.User{}
 	err := ctx.BindForm(&user)
 
