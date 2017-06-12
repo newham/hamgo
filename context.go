@@ -149,7 +149,8 @@ func (ctx *WebContext) GetSession() Session {
 }
 
 //BindForm : use reflect to bind form-values to object
-func (ctx *WebContext) BindForm(obj interface{}) error {
+func (ctx *WebContext) BindForm(obj interface{}) map[string]error {
+	errs := make(map[string]error)
 	rt := reflect.TypeOf(obj).Elem()
 	rv := reflect.ValueOf(obj).Elem()
 	for i := 0; i < rt.NumField(); i++ {
@@ -158,7 +159,7 @@ func (ctx *WebContext) BindForm(obj interface{}) error {
 		formValue := ctx.R.FormValue(formName)
 		//1.check value
 		if err := checkValueByTag(formName, formValue, rf.Tag.Get("check")); err != nil {
-			return err
+			errs[formName] = err
 		}
 		//2.set value
 		switch rf.Type.Kind() {
@@ -174,10 +175,10 @@ func (ctx *WebContext) BindForm(obj interface{}) error {
 			rv.Field(i).SetFloat(stringToFloat64(formValue, 0))
 		}
 	}
-	return nil
+	return errs
 }
 
-//BindJSON :
+//BindJSON : prase
 func (ctx *WebContext) BindJSON(obj interface{}) error {
 	j, err := ioutil.ReadAll(ctx.R.Body)
 	if err != nil {
@@ -208,55 +209,57 @@ func checkValueByTag(formName, formValue, check string) error {
 		switch tagName {
 		case checkTagEmail:
 			if m, _ := regexp.MatchString(`^([\w\.\_]{2,10})@(\w{1,}).([a-z]{2,4})$`, formValue); !m {
-				return newError(formName, checkTagErrorEmail)
+				return newError(checkTagErrorEmail)
 			}
 		case checkTagMobile:
 			if m, _ := regexp.MatchString(`^(1[3|4|5|8][0-9]\d{4,8})$`, formValue); !m {
-				return newError(formName, checkTagErrorMobile)
+				return newError(checkTagErrorMobile)
 			}
 		case checkTagNotNull:
 			if formValue == "" {
-				return newError(formName, checkTagErrorNotNull)
+				return newError(checkTagErrorNotNull)
 			}
 		case checkTagTel:
 			if m, _ := regexp.MatchString(`^(\(\d{3,4}-)|\d{3.4}-)?\d{7,8}$`, formValue); !m {
-				return newError(formName, checkTagErrorTel)
+				return newError(checkTagErrorTel)
 			}
 		case checkTagPhone:
-			if m, _ := regexp.MatchString(`^(1[3|4|5|8][0-9]\d{4,8})|(\(\d{3,4}-)|\d{3.4}-)?\d{7,8}$`, formValue); !m {
-				return newError(formName, checkTagErrorPhone)
+			m1, _ := regexp.MatchString(`^(1[3|4|5|8][0-9]\d{4,8})$`, formValue)
+			m2, _ := regexp.MatchString(`^(\(\d{3,4}-)|\d{3.4}-)?\d{7,8}$`, formValue)
+			if !m1 && !m2 {
+				return newError(checkTagErrorPhone)
 			}
 		case checkTagURL:
 			if m, _ := regexp.MatchString(`[a-zA-z]+://[^\s]*`, formValue); !m {
-				return newError(formName, checkTagErrorURL)
+				return newError(checkTagErrorURL)
 			}
 		case checkTagNum:
 			if m, _ := regexp.MatchString(`^[0-9]*$`, formValue); !m {
-				return newError(formName, checkTagErrorNum)
+				return newError(checkTagErrorNum)
 			}
 		case checkTagIpv4:
 			if m, _ := regexp.MatchString(`((?:(?:25[0-5]|2[0-4]\\d|[01]?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d?\\d))`, formValue); !m {
-				return newError(formName, checkTagErrorIpv4)
+				return newError(checkTagErrorIpv4)
 			}
 		case checkTagSize:
 			if m, _ := regexp.MatchString(`^.{`+tagVal+`}$`, formValue); !m {
-				return newError(formName, checkTagErrorSize)
+				return newError(checkTagErrorSize)
 			}
 		case checkTagMaxSize:
 			if m, _ := regexp.MatchString(`^.{,`+tagVal+`}$`, formValue); !m {
-				return newError(formName, checkTagErrorMaxSize)
+				return newError(checkTagErrorMaxSize)
 			}
 		case checkTagMinSize:
 			if m, _ := regexp.MatchString(`^.{`+tagVal+`,}$`, formValue); !m {
-				return newError(formName, checkTagErrorMinSize)
+				return newError(checkTagErrorMinSize)
 			}
 		case checkTagMin:
 			if stringToInt(formValue, 0) < stringToInt(tagVal, 0) {
-				return newError(formName, checkTagErrorMin)
+				return newError(checkTagErrorMin)
 			}
 		case checkTagMax:
 			if stringToInt(formValue, 0) > stringToInt(tagVal, 0) {
-				return newError(formName, checkTagErrorMin)
+				return newError(checkTagErrorMin)
 			}
 		case checkTagRange:
 			vals := strings.Split(tagVal, ",")
@@ -264,13 +267,13 @@ func checkValueByTag(formName, formValue, check string) error {
 			max := stringToInt(vals[1], 1)
 			val := stringToInt(formValue, 0)
 			if min > val || max < val {
-				return newError(formName, checkTagErrorRange)
+				return newError(checkTagErrorRange)
 			}
 		}
 	}
 
 	return nil
 }
-func newError(formName, errorInfo string) error {
-	return fmt.Errorf("%s:%s", formName, errorInfo)
+func newError(errorInfo string) error {
+	return fmt.Errorf(errorInfo)
 }

@@ -19,7 +19,7 @@ type logger interface {
 	Info(format string, a ...interface{})
 	Debug(format string, a ...interface{})
 	Warn(format string, a ...interface{})
-	WriteBuf()
+	writeBuf()
 	onExit()
 	format(title, text string) string
 }
@@ -43,7 +43,7 @@ const (
 	defaultWriteBufSize = 1 * 1024  //B
 	defaultFileMaxSize  = 10 * 1024 //B
 	defaultConsole      = true
-	defaultFormat       = "[%-5Title] [%Time] [%File] %Text"
+	defaultFormat       = "[%Title] [%Time] [%File] %Text"
 	logTitleDebug       = "Debug"
 	logTitleInfo        = "Info"
 	logTitleError       = "Error"
@@ -73,7 +73,7 @@ func newLogger(filePath string) {
 		bufTime:     time.Duration(defaultWriteBufTime),
 		bufSize:     defaultWriteBufSize}
 	//create a thread to write buf to log file
-	go Log.WriteBuf()
+	go Log.writeBuf()
 	//listen exit signal
 	go Log.onExit()
 }
@@ -91,7 +91,7 @@ func newLoggerByConf() {
 		bufTime:     time.Duration(Conf.DefaultInt64(confBufTime, defaultWriteBufTime)),
 		bufSize:     Conf.DefaultInt(confBufSize, defaultWriteBufSize) * 1024}
 	//create a thread to write buf to log file
-	go Log.WriteBuf()
+	go Log.writeBuf()
 	//listen exit signal
 	go Log.onExit()
 }
@@ -112,7 +112,7 @@ func (log *fileLogger) Warn(format string, a ...interface{}) {
 	log.writeAndPrint("Warn", format, a...)
 }
 
-func (log *fileLogger) WriteBuf() {
+func (log *fileLogger) writeBuf() {
 	for {
 		//1.sleep
 		time.Sleep(log.bufTime)
@@ -177,7 +177,7 @@ func (log *fileLogger) format(title, text string) string {
 
 	f := log.Format
 	if strings.Contains(f, confFormatTitle) {
-		f = strings.Replace(f, confFormatTitle, title, -1)
+		f = strings.Replace(f, confFormatTitle, fmt.Sprintf("%-5s", title), -1)
 	}
 	if strings.Contains(f, confFormatFile) {
 		_, fileName, lineNum, _ := runtime.Caller(3)
