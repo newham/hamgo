@@ -31,7 +31,8 @@ func BeforeIndex(ctx *hamgo.WebContext) {
 }
 
 func Page(ctx *hamgo.WebContext) {
-	ctx.HTML(nil, "view/index.html", "view/title.tmpl")
+	ctx.PutData("Title", "Hello World")
+	ctx.HTML("view/index.html", "view/title.tmpl")
 }
 
 func Session(ctx *hamgo.WebContext) {

@@ -112,8 +112,8 @@ func (ctx *WebContext) JSONFrom(code int, data interface{}) error {
 	return nil
 }
 
-//HTML :
-func (ctx *WebContext) HTML(data interface{}, filenames ...string) {
+//DataHTML :
+func (ctx *WebContext) DataHTML(data interface{}, filenames ...string) {
 	t, err := template.ParseFiles(filenames...)
 	if err != nil {
 		ctx.WriteString("prase template failed! check file path")
@@ -187,9 +187,14 @@ func (ctx *WebContext) BindJSON(obj interface{}) error {
 	return json.Unmarshal(j, obj)
 }
 
-//DataHTML :
-func (ctx *WebContext) DataHTML(filenames ...string) {
-	ctx.HTML(ctx.Data, filenames...)
+//HTML :
+func (ctx *WebContext) HTML(filenames ...string) {
+	ctx.DataHTML(ctx.Data, filenames...)
+}
+
+//WriteBytes :
+func (ctx *WebContext) PutData(key string, data interface{}) {
+	ctx.Data[key] = data
 }
 
 func checkValueByTag(formName, formValue, check string) error {
