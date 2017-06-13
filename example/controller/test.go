@@ -23,9 +23,15 @@ func Hello(ctx *hamgo.WebContext) {
 }
 
 func Json(ctx *hamgo.WebContext) {
-	ctx.WriteString("Json")
+	ctx.PutData("say", "hello world")
 	ctx.JSON(200)
 }
+
+func JsonFromData(ctx *hamgo.WebContext) {
+	data := map[string]interface{}{"say": "hello world"}
+	ctx.JSONFrom(200, data)
+}
+
 func BeforeIndex(ctx *hamgo.WebContext) {
 	ctx.WriteString("Before ")
 }

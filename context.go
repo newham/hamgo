@@ -92,7 +92,7 @@ func (ctx *WebContext) Text(code int) {
 func (ctx *WebContext) JSON(code int) error {
 	ctx.Code(code)
 	ctx.W.WriteHeader(ctx.StatusCode)
-	b, err := json.Marshal(ctx.RespBuf.Bytes())
+	b, err := json.Marshal(ctx.Data)
 	if err != nil {
 		return err
 	}
