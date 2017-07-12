@@ -8,11 +8,11 @@ const (
 	confPort    = "port"
 )
 
-//Server :
+//Server : web server interface
 type Server interface {
 	//base
-	RunAt(port string) Server
-	Run() Server
+	RunAt(port string) error
+	Run() error
 	GetPort() string
 	//method
 	Get(path string, handler func(ctx *WebContext)) Server
@@ -20,23 +20,23 @@ type Server interface {
 	Put(path string, handler func(ctx *WebContext)) Server
 	Delete(path string, handler func(ctx *WebContext)) Server
 	Head(path string, handler func(ctx *WebContext)) Server
-	//get inject
+	//get AOP
 	GetBefore(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) Server
 	GetAfter(path string, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server
 	GetBeforeAfter(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server
-	//post inject
+	//post AOP
 	PostBefore(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) Server
 	PostAfter(path string, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server
 	PostBeforeAfter(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server
-	//put inject
+	//put AOP
 	PutBefore(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) Server
 	PutAfter(path string, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server
 	PutBeforeAfter(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server
-	//delete inject
+	//delete AOP
 	DeleteBefore(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) Server
 	DeleteAfter(path string, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server
 	DeleteBeforeAfter(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server
-	//head inject
+	//head AOP
 	HeadBefore(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) Server
 	HeadAfter(path string, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server
 	HeadBeforeAfter(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server
@@ -49,7 +49,7 @@ type Server interface {
 	HandlerBeforeAfter(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext), method string) Server
 }
 
-//webServer :
+//webServer : a web server implements Server interface
 type webServer struct {
 	Port string
 	Mux  *http.ServeMux
@@ -61,75 +61,73 @@ func newServer() Server {
 }
 
 //RunAt : let server run at port
-func (s *webServer) RunAt(port string) Server {
+func (s *webServer) RunAt(port string) error {
 	s.Port = ":" + port
-	http.ListenAndServe(s.Port, s.Mux)
-	return s
+	return http.ListenAndServe(s.Port, s.Mux)
 }
 
-//Run :
-func (s *webServer) Run() Server {
+//Run : server run at default port 8080
+func (s *webServer) Run() error {
 	s.Port = ":" + Conf.DefaultString(confPort, defaultPort)
-	http.ListenAndServe(s.Port, s.Mux)
-	return s
+	return http.ListenAndServe(s.Port, s.Mux)
 }
 
-//GetPort :
+//GetPort : get server run port
 func (s *webServer) GetPort() string {
 	return s.Port
 }
 
-//Get :
+//Get : set GET method handler
 func (s *webServer) Get(path string, handler func(ctx *WebContext)) Server {
 	return s.Handler(path, handler, http.MethodGet)
 }
 
-//Post :
+//Post : set POST method handler
 func (s *webServer) Post(path string, handler func(ctx *WebContext)) Server {
 	return s.Handler(path, handler, http.MethodPost)
 }
 
-//Put :
+//Put : set PUT method handler
 func (s *webServer) Put(path string, handler func(ctx *WebContext)) Server {
 	return s.Handler(path, handler, http.MethodPut)
 }
 
-//Delete :
+//Delete : set DELETE method handler
 func (s *webServer) Delete(path string, handler func(ctx *WebContext)) Server {
 	return s.Handler(path, handler, http.MethodDelete)
 }
 
-//Head :
+//Head : set HEAD method handler
 func (s *webServer) Head(path string, handler func(ctx *WebContext)) Server {
 	return s.Handler(path, handler, http.MethodHead)
 }
 
-//GetBefore :
+//GetBefore : set func before GET method handler
 func (s *webServer) GetBefore(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) Server {
 	return s.HandlerBefore(path, handlerBefore, handler, http.MethodGet)
 }
 
-//GetAfter :
+//GetAfter : set func after GET method handler
 func (s *webServer) GetAfter(path string, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server {
 	return s.HandlerAfter(path, handler, handlerAfter, http.MethodGet)
 }
 
-//GetBeforeAfter :
+//GetBeforeAfter : set func after & before GET method handler
 func (s *webServer) GetBeforeAfter(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server {
 	return s.HandlerBeforeAfter(path, handlerBefore, handler, handlerAfter, http.MethodGet)
 }
 
-//PostBefore :
+//PostBefore : set func before POST method handler
 func (s *webServer) PostBefore(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) Server {
 	return s.HandlerBefore(path, handlerBefore, handler, http.MethodPost)
 }
 
-//PostAfter :
+//PostAfter : set func after POST method handler
 func (s *webServer) PostAfter(path string, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server {
 	return s.HandlerAfter(path, handler, handlerAfter, http.MethodPost)
 }
 
-//PostBeforeAfter :
+//PostBeforeAfter : set func after & before POST method handler
 func (s *webServer) PostBeforeAfter(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) Server {
 	return s.HandlerBeforeAfter(path, handlerBefore, handler, handlerAfter, http.MethodPost)
 }
@@ -181,7 +179,6 @@ func (s *webServer) HeadBeforeAfter(path string, handlerBefore func(ctx *WebCont
 
 //Static :
 func (s *webServer) Static(folder string) Server {
-
 	s.Mux.Handle("/"+folder+"/", http.StripPrefix("/"+folder+"/", http.FileServer(http.Dir(folder))))
 	return s
 }

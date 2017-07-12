@@ -113,9 +113,9 @@ type Session interface {
 var pder = &provider{list: list.New()}
 
 type sessionStore struct {
-	sid          string                      //session id唯一标示
-	timeAccessed time.Time                   //最后访问时间
-	value        map[interface{}]interface{} //session里面存储的值
+	sid          string                      //session id
+	timeAccessed time.Time                   //last access time
+	value        map[interface{}]interface{} //session data value
 }
 
 func (st *sessionStore) Set(key, value interface{}) error {
@@ -143,9 +143,9 @@ func (st *sessionStore) SessionID() string {
 }
 
 type provider struct {
-	lock     sync.Mutex               //用来锁
-	sessions map[string]*list.Element //用来存储在内存
-	list     *list.List               //用来做gc
+	lock     sync.Mutex               //used for lock
+	sessions map[string]*list.Element //used for inner store
+	list     *list.List               //used for gc
 }
 
 func (pder *provider) SessionInit(sid string) (Session, error) {

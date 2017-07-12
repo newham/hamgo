@@ -178,7 +178,7 @@ func (ctx *WebContext) BindForm(obj interface{}) map[string]error {
 	return errs
 }
 
-//BindJSON : prase
+//BindJSON : prase JSON to Struct
 func (ctx *WebContext) BindJSON(obj interface{}) error {
 	j, err := ioutil.ReadAll(ctx.R.Body)
 	if err != nil {
@@ -192,7 +192,7 @@ func (ctx *WebContext) HTML(filenames ...string) {
 	ctx.DataHTML(ctx.Data, filenames...)
 }
 
-//WriteBytes :
+//PutData :
 func (ctx *WebContext) PutData(key string, data interface{}) {
 	ctx.Data[key] = data
 }

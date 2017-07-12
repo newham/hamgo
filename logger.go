@@ -177,7 +177,7 @@ func (log *fileLogger) format(title, text string) string {
 
 	f := log.Format
 	if strings.Contains(f, confFormatTitle) {
-		f = strings.Replace(f, confFormatTitle, fmt.Sprintf("%-5s", title), -1)
+		f = strings.Replace(f, confFormatTitle, fmt.Sprintf("%s", title), -1)
 	}
 	if strings.Contains(f, confFormatFile) {
 		_, fileName, lineNum, _ := runtime.Caller(3)
