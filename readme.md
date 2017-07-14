@@ -1,13 +1,13 @@
 # hamgo
-**hamgo** —— A tiny MVC web framework based on golang!   
-You will find that build a website is **so easy** by using hamgo!  
+**hamgo** —— A tiny MVC web framework based on golang !   
+You will find that build a website is **so easy** by using hamgo !  
 Try it right now!
 ## Getting Started
 ```go
 go get github.com/newham/hamgo
 ```
 
-### A simplest example
+## A simplest example
 main.go
 ```go
 package main
@@ -28,12 +28,16 @@ func Hello(ctx *hamgo.WebContext) {
 }
 
 ```
+then run it
+```go
+go run main.go
+```
 You will see at [http://localhost:8080/hello](http://localhost:8080/hello)
 ```
 Hello world!
 ```
 
-### Handler Before & After
+## Controller AOP
 main.go
 ```go
 package main
@@ -58,13 +62,17 @@ func BeforeHello(ctx *hamgo.WebContext) {
 }
 
 ```
+then run it
+```go
+go run main.go
+```
 You will see at [http://localhost:8080/hello](http://localhost:8080/hello)
 ```
 Do Before Hello!
 Hello World!
 ```
 
-### Response HTML & Template
+## HTML & Template As Response  
 main.go
 ```go
 package main
@@ -101,6 +109,10 @@ index.html
     </body>
 </html>
 ```
+then run it
+```go
+go run main.go
+```
 You will see at [http://localhost:8080/page](http://localhost:8080/page)
 ```
 This is title
@@ -108,7 +120,7 @@ This is body
 ```
 more doc about template of golang at: [golang template](https://newham.github.io/hamgo-doc/)
 
-### Response Json
+## Json As Response  
 ```go
 //return json by putData
 func Json(ctx *hamgo.WebContext) {
@@ -129,8 +141,111 @@ return json result
     "say":"hello world"
 }
 ```
+## Static File
+code
+```go
+server := hamgo.New().Server()
+server.Static("public")
+```
+html
+```html
+<link rel="icon" href="/public/img/logo.ico" type="image/x-icon" />
+<script src="public/js/jquery.min.js"></script>
+```
 
-### Bind Request Form or Json & do validate
+## Restful API
+set restful API controller , [start with '*=*']
+```go
+server.Get("/index/=model/=id", controller.Index)
+```
+controller
+```go
+func Index(ctx *hamgo.WebContext) {
+	model := ctx.PathParam("model")
+    id := ctx.PathParam("id")
+}
+```
+
+## Config
+### [1] init
+init config file at create server
+```go
+server := hamgo.NewUseConf("./app.conf").Server()
+```
+set config file after create server
+```go
+server := hamgo.New().UseConfig("./app.conf").Server()
+```
+app.conf ( config file )
+```conf
+index = "hello"
+
+port = 8087
+
+# second
+session_max_time = 1800
+
+# logger
+log_console = true
+log_file = "./log/app.log"
+# KB
+log_file_max_size = 50
+# KB
+log_buf_size = 10
+# ms
+log_buf_time = 2000
+# format
+log_format = "%Title %Time %File %Text"
+
+
+```
+### [2] use
+```go
+port := hamgo.Conf.String("port")
+```
+
+## Logger
+### [1] init
+```go
+server := hamgo.UseConfig("./log/app.log").Server()
+```
+### [2] use
+```go
+hamgo.Log.Debug("done old UserName:%s", user.UserName)
+hamgo.Log.Warn("UserPassword:%s", user.UserPassword)
+hamgo.Log.Info("Age:%d", user.Age)
+hamgo.Log.Error("Email:%s", user.Email)
+```
+you will see output in [./log/app.log] and [console]
+```bash
+[Debug] [2017-06-09 17:06:49] [test.go:55] done old UserName:test_user
+[Warn] [2017-06-09 17:06:49] [test.go:56] UserPassword:123
+[Info] [2017-06-09 17:06:49] [test.go:57] Age:23
+[Error] [2017-06-09 17:06:49] [test.go:58] Email:test@test.com
+```
+
+## Session
+### [1] init
+```go
+server := hamgo.UseSession(3600).Server() //session timeout is 3600 seconds
+
+```
+### [2] use
+```go
+type User struct{
+	UserName string
+    Password string
+}
+
+var user User
+session :=ctx.GetSession() //get session
+session.Set("user",user) //set session key-value
+user := session.Get("user").(User) //get session value by key
+session.Delete("user") //delete session value by key
+sessionId :=session.SessionID() //get session id
+```
+
+## Bind Request Form or Json & do validate
 ```go
 type MyForm struct {
     UserName     string `form:"username" check:"NotNull"`
@@ -155,7 +270,7 @@ func Bind(ctx *hamgo.WebContext) {
 }
 ```
 
-## What we have ?
+## What hamgo have ?
 
 |Features      |Support  |
 |--------------|:-------:|
