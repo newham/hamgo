@@ -1,6 +1,9 @@
 package hamgo
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 const (
 	//DefaultPort : default port to listen
@@ -67,13 +70,13 @@ func newServer() Server {
 //RunAt : let server run at port
 func (s *webServer) RunAt(port string) error {
 	s.port = ":" + port
+	fmt.Printf("Server started on port :%s\n", port)
 	return http.ListenAndServe(s.port, s.mux)
 }
 
 //Run : server run at default port 8080
 func (s *webServer) Run() error {
-	s.port = ":" + Conf.DefaultString(confPort, defaultPort)
-	return http.ListenAndServe(s.port, s.mux)
+	return s.RunAt(Conf.DefaultString(confPort, defaultPort))
 }
 
 //GetPort : get server run port

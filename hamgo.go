@@ -49,6 +49,7 @@ func (d *webDomain) UseLogger(logFile string) Domain {
 }
 
 func (d *webDomain) Server() Server {
+	printLogo()
 	return d.server
 }
 

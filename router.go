@@ -1,6 +1,7 @@
 package hamgo
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -100,17 +101,21 @@ func (route *route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 }
 
 func newRoute(path string, method string, filter *filter, handler func(ctx *WebContext)) *route {
+	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
 	return &route{Inject: injectNormal, Path: path, Method: method, Filter: filter, Func: handler}
 }
 
 func newBeforeRoute(path, method string, filter *filter, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) *route {
+	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
 	return &route{Inject: injectBefore, Path: path, Method: method, Filter: filter, Func: handler, FuncBefore: handlerBefore}
 }
 
 func newAfterRoute(path, method string, filter *filter, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) *route {
+	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
 	return &route{Inject: injectAfter, Path: path, Method: method, Filter: filter, Func: handler, FuncAfter: handlerAfter}
 }
 
 func newBeforeAfterRoute(path, method string, filter *filter, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) *route {
+	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
 	return &route{Inject: injectBeforeAfter, Path: path, Method: method, Filter: filter, Func: handler, FuncBefore: handlerBefore, FuncAfter: handlerAfter}
 }

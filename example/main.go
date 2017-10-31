@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"hamgo"
 	"hamgo/example/controller"
 )
@@ -22,7 +21,6 @@ func main() {
 	server.Get("/session", controller.Session)
 	server.Post("/", controller.Index)
 	server.Get("/bind", controller.Bind)
-	fmt.Println("run at :" + hamgo.Conf.String("port"))
 	// server.RunAt(hamgo.Conf.String("port"))
 	server.Run()
 

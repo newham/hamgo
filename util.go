@@ -1,6 +1,9 @@
 package hamgo
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
 
 func int64ToString(i int64) string {
 	return strconv.FormatInt(i, 10)
@@ -40,4 +43,15 @@ func stringToFloat64(str string, must float64) float64 {
 		return must
 	}
 	return value
+}
+
+func printLogo() {
+	logo := "     __    __\n" +
+		"    /  /  /  / _______    _________    _______        \n" +
+		"   /  /__/  / /  ___  \\  /  __ __  \\  /  _____\\    \n" +
+		"  /   __   / /  /__/  / /  / // /  / /  / ____  _____ \n" +
+		" /  /  /  / /  /  /  / /  / // /  / /  /__/  / / _  / \n" +
+		"/__/  /__/ /__/  /__/ /__/ // /__/ /________/ /____/  \n" +
+		">>hamgo>> (%s)\n\n"
+	fmt.Printf(logo, VERSION)
 }
