@@ -47,8 +47,29 @@ const (
 	checkTagErrorRange   = "wrong range"
 )
 
+type Context interface {
+	FormValue(key string) string
+	WriteBytes(b []byte)
+	WriteString(str string)
+	Text(code int)
+	JSON(code int) error
+	JSONFrom(code int, data interface{}) error
+	JSONString(code int, data string) error
+	DataHTML(data interface{}, filenames ...string)
+	Redirect(code int, path string)
+	Code(statusCode int)
+	PathParam(key string) string
+	FormFile(fileName string) (multipart.File, *multipart.FileHeader, error)
+	GetSession() Session
+	BindForm(obj interface{}) map[string]error
+	BindJSON(obj interface{}) error
+	HTML(filenames ...string)
+	PutData(key string, data interface{})
+}
+
 //WebContext :
 type WebContext struct {
+	Context
 	W          http.ResponseWriter
 	R          *http.Request
 	RespBuf    *bytes.Buffer
@@ -96,8 +117,8 @@ func (ctx *WebContext) JSON(code int) error {
 	if err != nil {
 		return err
 	}
-	ctx.W.Write(b)
-	return nil
+	_, err = ctx.W.Write(b)
+	return err
 }
 
 //JSONFrom :
@@ -108,8 +129,16 @@ func (ctx *WebContext) JSONFrom(code int, data interface{}) error {
 	if err != nil {
 		return err
 	}
-	ctx.W.Write(b)
-	return nil
+	_, err = ctx.W.Write(b)
+	return err
+}
+
+//JSONString :
+func (ctx *WebContext) JSONString(code int, data string) error {
+	ctx.Code(code)
+	ctx.W.WriteHeader(ctx.StatusCode)
+	_, err := ctx.W.Write([]byte(data))
+	return err
 }
 
 //DataHTML :

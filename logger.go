@@ -101,7 +101,7 @@ func (log *fileLogger) Error(format string, a ...interface{}) {
 }
 
 func (log *fileLogger) Info(format string, a ...interface{}) {
-	log.writeAndPrint("Info", format, a...)
+	log.writeAndPrint("Info ", format, a...)
 }
 
 func (log *fileLogger) Debug(format string, a ...interface{}) {
@@ -109,7 +109,7 @@ func (log *fileLogger) Debug(format string, a ...interface{}) {
 }
 
 func (log *fileLogger) Warn(format string, a ...interface{}) {
-	log.writeAndPrint("Warn", format, a...)
+	log.writeAndPrint("Warn ", format, a...)
 }
 
 func (log *fileLogger) writeBuf() {

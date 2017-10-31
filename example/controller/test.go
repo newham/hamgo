@@ -6,12 +6,49 @@ import (
 	"strconv"
 )
 
+const (
+	USER_SESSION string = "userSession"
+)
+
+func Login(ctx *hamgo.WebContext) {
+	println("/login/")
+	user := ctx.PathParam("user")
+	password := ctx.PathParam("password")
+	if user == "admin" && password == "123456" {
+		ctx.GetSession().Set(USER_SESSION, user)
+		ctx.WriteString("login success")
+		ctx.Text(200)
+	} else {
+		ctx.WriteString("login failed")
+		ctx.Text(400)
+	}
+
+}
+
+func Logout(ctx *hamgo.WebContext) {
+	hamgo.Log.Info("logout:%s", ctx.GetSession().Get(USER_SESSION))
+	ctx.GetSession().Delete(USER_SESSION)
+	ctx.WriteString("logout success")
+	ctx.Text(200)
+}
+
 func Index(ctx *hamgo.WebContext) {
 	println("/index/")
 	println("model:" + ctx.PathParam("model"))
 	println("id:" + ctx.PathParam("id"))
 	ctx.WriteString(hamgo.Conf.String("index"))
 	ctx.Text(200)
+}
+
+func Filter(ctx *hamgo.WebContext) bool {
+	if ctx.GetSession().Get(USER_SESSION) != nil {
+		return true
+	}
+	ctx.PutData("code", 401)
+	ctx.PutData("msg", "Unauthorized")
+	ctx.JSON(401)
+	hamgo.Log.Error("401,%s", "Unauthorized")
+	return false
 }
 
 func Hello(ctx *hamgo.WebContext) {

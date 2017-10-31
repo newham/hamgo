@@ -14,6 +14,7 @@ type Server interface {
 	RunAt(port string) error
 	Run() error
 	GetPort() string
+	GetMux() *http.ServeMux
 	//method
 	Get(path string, handler func(ctx *WebContext)) Server
 	Post(path string, handler func(ctx *WebContext)) Server
@@ -47,34 +48,42 @@ type Server interface {
 	HandlerBefore(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), method string) Server
 	HandlerAfter(path string, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext), method string) Server
 	HandlerBeforeAfter(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext), method string) Server
+	//filter
+	Filter(handler func(ctx *WebContext) bool) *filter
 }
 
 //webServer : a web server implements Server interface
 type webServer struct {
-	Port string
-	Mux  *http.ServeMux
+	port   string
+	mux    *http.ServeMux
+	filter *filter
 }
 
 //NewServer : creat a web server
 func newServer() Server {
-	return &webServer{Mux: http.NewServeMux()}
+	return &webServer{mux: http.NewServeMux()}
 }
 
 //RunAt : let server run at port
 func (s *webServer) RunAt(port string) error {
-	s.Port = ":" + port
-	return http.ListenAndServe(s.Port, s.Mux)
+	s.port = ":" + port
+	return http.ListenAndServe(s.port, s.mux)
 }
 
 //Run : server run at default port 8080
 func (s *webServer) Run() error {
-	s.Port = ":" + Conf.DefaultString(confPort, defaultPort)
-	return http.ListenAndServe(s.Port, s.Mux)
+	s.port = ":" + Conf.DefaultString(confPort, defaultPort)
+	return http.ListenAndServe(s.port, s.mux)
 }
 
 //GetPort : get server run port
 func (s *webServer) GetPort() string {
-	return s.Port
+	return s.port
+}
+
+//
+func (s *webServer) GetMux() *http.ServeMux {
+	return s.mux
 }
 
 //Get : set GET method handler
@@ -179,38 +188,44 @@ func (s *webServer) HeadBeforeAfter(path string, handlerBefore func(ctx *WebCont
 
 //Static :
 func (s *webServer) Static(folder string) Server {
-	s.Mux.Handle("/"+folder+"/", http.StripPrefix("/"+folder+"/", http.FileServer(http.Dir(folder))))
+	s.mux.Handle("/"+folder+"/", http.StripPrefix("/"+folder+"/", http.FileServer(http.Dir(folder))))
 	return s
 }
 
 //Handler :
 func (s *webServer) Handler(path string, handler func(ctx *WebContext), method string) Server {
 
-	r := newRoute(path, method, handler)
-	s.Mux.Handle(newPath(path).Route(), r)
+	r := newRoute(path, method, s.filter, handler)
+	s.mux.Handle(newPath(path).Route(), r)
 	return s
 }
 
 //HandlerBefore :
 func (s *webServer) HandlerBefore(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), method string) Server {
 
-	r := newBeforeRoute(path, method, handlerBefore, handler)
-	s.Mux.Handle(newPath(path).Route(), r)
+	r := newBeforeRoute(path, method, s.filter, handlerBefore, handler)
+	s.mux.Handle(newPath(path).Route(), r)
 	return s
 }
 
 //HandlerAfter :
 func (s *webServer) HandlerAfter(path string, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext), method string) Server {
 
-	r := newAfterRoute(path, method, handler, handlerAfter)
-	s.Mux.Handle(newPath(path).Route(), r)
+	r := newAfterRoute(path, method, s.filter, handler, handlerAfter)
+	s.mux.Handle(newPath(path).Route(), r)
 	return s
 }
 
 //HandlerBeforeAfter :
 func (s *webServer) HandlerBeforeAfter(path string, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext), method string) Server {
 
-	r := newBeforeAfterRoute(path, method, handlerBefore, handler, handlerAfter)
-	s.Mux.Handle(newPath(path).Route(), r)
+	r := newBeforeAfterRoute(path, method, s.filter, handlerBefore, handler, handlerAfter)
+	s.mux.Handle(newPath(path).Route(), r)
 	return s
+}
+
+//Filter : true is pass filter , false is not pass
+func (s *webServer) Filter(handler func(ctx *WebContext) bool) *filter {
+	s.filter = &filter{annoURL: make([]string, 1), handler: handler}
+	return s.filter
 }
