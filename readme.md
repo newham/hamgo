@@ -1,11 +1,14 @@
 # hamgo
-**hamgo** —— A tiny MVC web framework based on golang !   
+>**hamgo** —— A tiny MVC web framework based on golang !   
 You will find that build a website is **so easy** by using hamgo !  
-Try it right now!
+Try it right now!  
+
+**github** : [https://github.com/newham/hamgo](https://github.com/newham/hamgo)
 ## Getting Started
 ```go
 go get github.com/newham/hamgo
 ```
+
 
 ## A simplest example
 main.go
@@ -35,6 +38,54 @@ go run main.go
 You will see at [http://localhost:8080/hello](http://localhost:8080/hello)
 ```
 Hello world!
+```
+## Filter
+main.go
+```go
+package main
+
+import (
+    "github.com/newham/hamgo"
+)
+
+func main() {
+    server := hamgo.New().Server()
+    server.Filter(LoginFilter).AddAnnoURL("/login")//set filter func LoginFilter(),and add anno url "/login";
+    //Filter must be set before set handler ; 
+    //Filter can be set only one in this version
+    server.Get("/hello",Hello)
+    server.RunAt("8080")
+}
+
+//return: true is pass filter , false is not pass
+func LoginFilter(ctx *hamgo.WebContext) bool {
+    if ctx.GetSession().Get(USER_SESSION) != nil {
+		return true
+	}
+	ctx.PutData("code", 401)
+	ctx.PutData("msg", "Login please!")
+	ctx.JSON(401)
+	return false
+}
+
+func Hello(ctx *hamgo.WebContext) {
+    ctx.WriteString("Hello World!")
+    ctx.Text(200)
+}
+```
+then run it
+```go
+go run main.go
+```
+You will see at [http://localhost:8080/hello](http://localhost:8080/hello)
+```
+{
+    "msg":"Login please!"
+}
+```
+not
+```
+Hello World!
 ```
 
 ## Controller AOP
@@ -185,19 +236,6 @@ port = 8087
 # second
 session_max_time = 1800
 
-# logger
-log_console = true
-log_file = "./log/app.log"
-# KB
-log_file_max_size = 50
-# KB
-log_buf_size = 10
-# ms
-log_buf_time = 2000
-# format
-log_format = "%Title %Time %File %Text"
-
-
 ```
 ### [2] use
 ```go
@@ -209,7 +247,24 @@ port := hamgo.Conf.String("port")
 ```go
 server := hamgo.UseConfig("./log/app.log").Server()
 ```
-### [2] use
+
+### [2] config
+app.conf ( config file )
+```go
+# logger
+log_console = true
+log_file = "./log/app.log"
+# KB
+log_file_max_size = 50
+# KB
+log_buf_size = 10
+# ms
+log_buf_time = 2000
+# format
+log_format = "[%Title] [%Time] [%File] %Text"
+```
+
+### [3] use
 ```go
 hamgo.Log.Debug("done old UserName:%s", user.UserName)
 hamgo.Log.Warn("UserPassword:%s", user.UserPassword)
@@ -233,7 +288,7 @@ server := hamgo.UseSession(3600).Server() //session timeout is 3600 seconds
 ### [2] use
 ```go
 type User struct{
-	UserName string
+    UserName string
     Password string
 }
 
@@ -275,7 +330,7 @@ func Bind(ctx *hamgo.WebContext) {
 |Features      |Support  |
 |--------------|:-------:|
 |restful API   |√        |
-|method filter |√        |
+|filter        |√        |
 |handler AOP   |√        |
 |config        |√        |
 |session       |√        |
