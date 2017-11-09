@@ -71,7 +71,7 @@ func (route *route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	ctx := newWebContext(rw, r, route.Path)
 	//do filter
 	isFilter := true
-	if route.Filter.handler != nil {
+	if route.Filter != nil {
 		for _, url := range route.Filter.annoURL {
 			if strings.HasPrefix(route.Path, url) {
 				isFilter = false
