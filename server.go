@@ -76,7 +76,7 @@ func (s *webServer) RunAt(port string) error {
 
 //Run : server run at default port 8080
 func (s *webServer) Run() error {
-	return s.RunAt(Conf.DefaultString(confPort, defaultPort))
+	return s.RunAt(defaultPort)
 }
 
 //GetPort : get server run port
