@@ -65,127 +65,129 @@ type Context interface {
 	BindJSON(obj interface{}) error
 	HTML(filenames ...string)
 	PutData(key string, data interface{})
+	R() *http.Request
+	W() http.ResponseWriter
 }
 
-//WebContext :
-type WebContext struct {
+//webContext :
+type webContext struct {
 	Context
-	W          http.ResponseWriter
-	R          *http.Request
-	RespBuf    *bytes.Buffer
-	StatusCode int
-	PathParams map[string]string
-	Data       map[string]interface{}
+	w          http.ResponseWriter
+	r          *http.Request
+	respBuf    *bytes.Buffer
+	statusCode int
+	pathParams map[string]string
+	data       map[string]interface{}
 }
 
 //NewWebContext :
-func newWebContext(rw http.ResponseWriter, r *http.Request, path string) *WebContext {
-	return &WebContext{W: rw, R: r,
-		RespBuf:    new(bytes.Buffer),
-		StatusCode: http.StatusOK,
-		PathParams: newPath(path).PathParam(r.URL.Path),
-		Data:       make(map[string]interface{})}
+func newWebContext(rw http.ResponseWriter, r *http.Request, path string) Context {
+	return &webContext{w: rw, r: r,
+		respBuf:    new(bytes.Buffer),
+		statusCode: http.StatusOK,
+		pathParams: newPath(path).PathParam(r.URL.Path),
+		data:       make(map[string]interface{})}
 }
 
 //FormValue :
-func (ctx *WebContext) FormValue(key string) string {
-	return ctx.R.FormValue(key)
+func (ctx *webContext) FormValue(key string) string {
+	return ctx.r.FormValue(key)
 }
 
 //WriteBytes :
-func (ctx *WebContext) WriteBytes(b []byte) {
-	ctx.RespBuf.Write(b)
+func (ctx *webContext) WriteBytes(b []byte) {
+	ctx.respBuf.Write(b)
 }
 
 //WriteString :
-func (ctx *WebContext) WriteString(str string) {
-	ctx.RespBuf.WriteString(str)
+func (ctx *webContext) WriteString(str string) {
+	ctx.respBuf.WriteString(str)
 }
 
 //Text :
-func (ctx *WebContext) Text(code int) {
+func (ctx *webContext) Text(code int) {
 	ctx.Code(code)
-	ctx.W.WriteHeader(ctx.StatusCode)
-	ctx.W.Write(ctx.RespBuf.Bytes())
+	ctx.w.WriteHeader(ctx.statusCode)
+	ctx.w.Write(ctx.respBuf.Bytes())
 }
 
 //JSON :
-func (ctx *WebContext) JSON(code int) error {
+func (ctx *webContext) JSON(code int) error {
 	ctx.Code(code)
-	ctx.W.WriteHeader(ctx.StatusCode)
-	b, err := json.Marshal(ctx.Data)
+	ctx.w.WriteHeader(ctx.statusCode)
+	b, err := json.Marshal(ctx.data)
 	if err != nil {
 		return err
 	}
-	_, err = ctx.W.Write(b)
+	_, err = ctx.w.Write(b)
 	return err
 }
 
 //JSONFrom :
-func (ctx *WebContext) JSONFrom(code int, data interface{}) error {
+func (ctx *webContext) JSONFrom(code int, data interface{}) error {
 	ctx.Code(code)
-	ctx.W.WriteHeader(ctx.StatusCode)
+	ctx.w.WriteHeader(ctx.statusCode)
 	b, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	_, err = ctx.W.Write(b)
+	_, err = ctx.w.Write(b)
 	return err
 }
 
 //JSONString :
-func (ctx *WebContext) JSONString(code int, data string) error {
+func (ctx *webContext) JSONString(code int, data string) error {
 	ctx.Code(code)
-	ctx.W.WriteHeader(ctx.StatusCode)
-	_, err := ctx.W.Write([]byte(data))
+	ctx.w.WriteHeader(ctx.statusCode)
+	_, err := ctx.w.Write([]byte(data))
 	return err
 }
 
 //DataHTML :
-func (ctx *WebContext) DataHTML(data interface{}, filenames ...string) {
+func (ctx *webContext) DataHTML(data interface{}, filenames ...string) {
 	t, err := template.ParseFiles(filenames...)
 	if err != nil {
 		ctx.WriteString("prase template failed! check file path")
 		ctx.Text(500)
 		return
 	}
-	t.Execute(ctx.W, data)
+	t.Execute(ctx.w, data)
 }
 
 //Redirect :
-func (ctx *WebContext) Redirect(code int, path string) {
-	http.Redirect(ctx.W, ctx.R, path, code)
+func (ctx *webContext) Redirect(code int, path string) {
+	http.Redirect(ctx.w, ctx.r, path, code)
 }
 
 //Code :
-func (ctx *WebContext) Code(statusCode int) {
-	ctx.StatusCode = statusCode
+func (ctx *webContext) Code(statusCode int) {
+	ctx.statusCode = statusCode
 }
 
 //PathParam :
-func (ctx *WebContext) PathParam(key string) string {
-	return ctx.PathParams[key]
+func (ctx *webContext) PathParam(key string) string {
+	return ctx.pathParams[key]
 }
 
 //FormFile :
-func (ctx *WebContext) FormFile(fileName string) (multipart.File, *multipart.FileHeader, error) {
-	return ctx.R.FormFile(fileName)
+func (ctx *webContext) FormFile(fileName string) (multipart.File, *multipart.FileHeader, error) {
+	return ctx.r.FormFile(fileName)
 }
 
 //GetSession :
-func (ctx *WebContext) GetSession() Session {
-	return sessions.SessionStart(ctx.W, ctx.R)
+func (ctx *webContext) GetSession() Session {
+	return sessions.SessionStart(ctx.w, ctx.r)
 }
 
 //BindForm : use reflect to bind form-values to object
-func (ctx *WebContext) BindForm(obj interface{}) map[string]error {
+func (ctx *webContext) BindForm(obj interface{}) map[string]error {
 	errs := make(map[string]error)
 	rt := reflect.TypeOf(obj).Elem()
 	rv := reflect.ValueOf(obj).Elem()
 	for i := 0; i < rt.NumField(); i++ {
 		rf := rt.Field(i)
 		formName := rf.Tag.Get("form")
-		formValue := ctx.R.FormValue(formName)
+		formValue := ctx.r.FormValue(formName)
 		//1.check value
 		if err := checkValueByTag(formName, formValue, rf.Tag.Get("check")); err != nil {
 			errs[formName] = err
@@ -208,8 +210,8 @@ func (ctx *WebContext) BindForm(obj interface{}) map[string]error {
 }
 
 //BindJSON : prase JSON to Struct
-func (ctx *WebContext) BindJSON(obj interface{}) error {
-	j, err := ioutil.ReadAll(ctx.R.Body)
+func (ctx *webContext) BindJSON(obj interface{}) error {
+	j, err := ioutil.ReadAll(ctx.r.Body)
 	if err != nil {
 		return err
 	}
@@ -217,13 +219,23 @@ func (ctx *WebContext) BindJSON(obj interface{}) error {
 }
 
 //HTML :
-func (ctx *WebContext) HTML(filenames ...string) {
-	ctx.DataHTML(ctx.Data, filenames...)
+func (ctx *webContext) HTML(filenames ...string) {
+	ctx.DataHTML(ctx.data, filenames...)
 }
 
 //PutData :
-func (ctx *WebContext) PutData(key string, data interface{}) {
-	ctx.Data[key] = data
+func (ctx *webContext) PutData(key string, data interface{}) {
+	ctx.data[key] = data
+}
+
+//R() :
+func (ctx *webContext) R() *http.Request {
+	return ctx.r
+}
+
+//W() :
+func (ctx *webContext) W() http.ResponseWriter {
+	return ctx.w
 }
 
 func checkValueByTag(formName, formValue, check string) error {

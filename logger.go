@@ -19,9 +19,6 @@ type logger interface {
 	Info(format string, a ...interface{})
 	Debug(format string, a ...interface{})
 	Warn(format string, a ...interface{})
-	writeBuf()
-	onExit()
-	format(title, text string) string
 }
 
 type fileLogger struct {
@@ -39,9 +36,9 @@ type fileLogger struct {
 
 const (
 	defaultFilePath     = "./app.log"
-	defaultWriteBufTime = 1000      //ms
-	defaultWriteBufSize = 1 * 1024  //B
-	defaultFileMaxSize  = 10 * 1024 //B
+	defaultWriteBufTime = 1000        //ms
+	defaultWriteBufSize = 1 * 1024    //B
+	defaultFileMaxSize  = 1024 * 1024 //B
 	defaultConsole      = true
 	defaultFormat       = "[%Title] [%Time] [%File] %Text"
 	logTitleDebug       = "Debug"
@@ -61,7 +58,7 @@ const (
 )
 
 func newLogger(filePath string) {
-	Log = &fileLogger{
+	logger := &fileLogger{
 		FilePath:    filePath,
 		fileFolder:  currentPath(filePath),
 		Format:      defaultFormat,
@@ -73,13 +70,15 @@ func newLogger(filePath string) {
 		bufTime:     time.Duration(defaultWriteBufTime),
 		bufSize:     defaultWriteBufSize}
 	//create a thread to write buf to log file
-	go Log.writeBuf()
+	go logger.writeBuf()
 	//listen exit signal
-	go Log.onExit()
+	go logger.onExit()
+
+	Log = logger
 }
 
 func newLoggerByConf() {
-	Log = &fileLogger{
+	logger := &fileLogger{
 		FilePath:    Conf.DefaultString(confFilePath, defaultFilePath),
 		fileFolder:  currentPath(Conf.DefaultString(confFilePath, defaultFilePath)),
 		Format:      Conf.DefaultString(confFormat, defaultFormat),
@@ -91,9 +90,11 @@ func newLoggerByConf() {
 		bufTime:     time.Duration(Conf.DefaultInt64(confBufTime, defaultWriteBufTime)),
 		bufSize:     Conf.DefaultInt(confBufSize, defaultWriteBufSize) * 1024}
 	//create a thread to write buf to log file
-	go Log.writeBuf()
+	go logger.writeBuf()
 	//listen exit signal
-	go Log.onExit()
+	go logger.onExit()
+
+	Log = logger
 }
 
 func (log *fileLogger) Error(format string, a ...interface{}) {

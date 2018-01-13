@@ -24,14 +24,14 @@ type route struct {
 	W          http.ResponseWriter
 	R          *http.Request
 	Filter     *filter
-	Func       func(ctx *WebContext)
-	FuncBefore func(ctx *WebContext)
-	FuncAfter  func(ctx *WebContext)
+	Func       func(ctx Context)
+	FuncBefore func(ctx Context)
+	FuncAfter  func(ctx Context)
 	PathKey    []string
 }
 
 type filter struct {
-	handler func(ctx *WebContext) bool
+	handler func(ctx Context) bool
 	annoURL []string
 }
 
@@ -100,22 +100,22 @@ func (route *route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 }
 
-func newRoute(path string, method string, filter *filter, handler func(ctx *WebContext)) *route {
-	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
+func newRoute(path string, method string, filter *filter, handler func(ctx Context)) *route {
+	fmt.Printf("Handler : [%-4s]->{%s}\n", method, path)
 	return &route{Inject: injectNormal, Path: path, Method: method, Filter: filter, Func: handler}
 }
 
-func newBeforeRoute(path, method string, filter *filter, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) *route {
-	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
+func newBeforeRoute(path, method string, filter *filter, handlerBefore func(ctx Context), handler func(ctx Context)) *route {
+	fmt.Printf("Handler : [%-4s]->{%s}\n", method, path)
 	return &route{Inject: injectBefore, Path: path, Method: method, Filter: filter, Func: handler, FuncBefore: handlerBefore}
 }
 
-func newAfterRoute(path, method string, filter *filter, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) *route {
-	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
+func newAfterRoute(path, method string, filter *filter, handler func(ctx Context), handlerAfter func(ctx Context)) *route {
+	fmt.Printf("Handler : [%-4s]->{%s}\n", method, path)
 	return &route{Inject: injectAfter, Path: path, Method: method, Filter: filter, Func: handler, FuncAfter: handlerAfter}
 }
 
-func newBeforeAfterRoute(path, method string, filter *filter, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) *route {
-	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
+func newBeforeAfterRoute(path, method string, filter *filter, handlerBefore func(ctx Context), handler func(ctx Context), handlerAfter func(ctx Context)) *route {
+	fmt.Printf("Handler : [%-4s]->{%s}\n", method, path)
 	return &route{Inject: injectBeforeAfter, Path: path, Method: method, Filter: filter, Func: handler, FuncBefore: handlerBefore, FuncAfter: handlerAfter}
 }

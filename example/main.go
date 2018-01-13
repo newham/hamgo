@@ -1,8 +1,8 @@
 package main
 
 import (
-	"hamgo"
-	"hamgo/example/controller"
+	"github.com/newham/hamgo"
+	"github.com/newham/hamgo/example/controller"
 )
 
 func main() {
@@ -11,6 +11,7 @@ func main() {
 	server := hamgo.NewUseConf("./app.conf").UseSessionByConf().UseLoggerByConf().Server()
 	server.Static("public")
 	server.Filter(controller.Filter).AddAnnoURL("/login")
+	server.Get("/hello", controller.Hello)
 	server.Get("/login/=user/=password", controller.Login)
 	server.Get("/logout", controller.Logout)
 	server.Get("/index/=model/=id", controller.Index)
