@@ -18,104 +18,77 @@ const (
 
 type route struct {
 	http.Handler
-	Inject     int
-	Path       string
-	Method     string
-	W          http.ResponseWriter
-	R          *http.Request
-	Filter     *filter
-	Func       func(ctx *WebContext)
-	FuncBefore func(ctx *WebContext)
-	FuncAfter  func(ctx *WebContext)
-	PathKey    []string
+	Inject           int
+	Path             string
+	Method           string
+	W                http.ResponseWriter
+	R                *http.Request
+	Filter           Filter
+	Func             func(ctx Context)
+	PathKey          []string
+	HTTPErrorHandler func(ctx Context)
 }
 
-type filter struct {
-	handler func(ctx *WebContext) bool
-	annoURL []string
-}
-
-func (f *filter) AddAnnoURL(url string) *filter {
-	if len(f.annoURL) <= 1 {
-		f.annoURL[0] = url
-	} else {
-		f.annoURL = append(f.annoURL, url)
+func (route *route) doFilter(rw http.ResponseWriter, r *http.Request) (Context, bool) {
+	//instance context
+	ctx := newWebContext(rw, r, route.Path)
+	//do user filter
+	if !route.doUserFilter(ctx) {
+		return ctx, false
 	}
-	return f
+	//do base filter
+	if !route.doBaseFilter(rw, r) {
+		return ctx, false
+	}
+	return ctx, true
 }
 
-func doBaseFilter(route *route, r *http.Request) int {
+func (route *route) doBaseFilter(rw http.ResponseWriter, r *http.Request) bool {
+	var filterError int
 	if !strings.Contains(route.Method, r.Method) {
-		return filterMethodError
+		filterError = filterMethodError
 	}
-	return filterOk
-}
-
-func (route *route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	switch doBaseFilter(route, r) {
+	switch filterError {
 	case filterMethodError:
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 		rw.Write([]byte("405 method not allowed"))
-		return
+		return false
 	case filter404Error:
 		rw.WriteHeader(http.StatusNotFound)
 		rw.Write([]byte("404 page not found"))
+		return false
+	}
+	return true
+}
+
+func (route *route) doUserFilter(ctx Context) bool {
+	if route.Filter != nil {
+		//not in anno url , do handler
+		if !route.Filter.IsAnnoURL(route.Path) && !route.Filter.DoFilter(ctx) {
+			//not pass , return false
+			return false
+		}
+		//pass , return true
+		return true
+	}
+	//not set filter , pass
+	return true
+}
+
+func (route *route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	//do filter
+	ctx, filterResult := route.doFilter(rw, r)
+	if !filterResult {
 		return
 	}
-
 	//set R,W
 	route.W = rw
 	route.R = r
-
-	//instance context
-	ctx := newWebContext(rw, r, route.Path)
-	//do filter
-	isFilter := true
-	if route.Filter != nil {
-		for _, url := range route.Filter.annoURL {
-			if strings.HasPrefix(route.Path, url) {
-				isFilter = false
-				break
-			}
-		}
-		if isFilter && !route.Filter.handler(ctx) {
-			return
-		}
-	}
 	//do handler
-	switch route.Inject {
-	case injectNormal:
-		route.Func(ctx)
-	case injectBefore:
-		route.FuncBefore(ctx)
-		route.Func(ctx)
-	case injectAfter:
-		route.Func(ctx)
-		route.FuncAfter(ctx)
-	case injectBeforeAfter:
-		route.FuncBefore(ctx)
-		route.Func(ctx)
-		route.FuncAfter(ctx)
-	}
-
+	route.Func(ctx)
 }
 
-func newRoute(path string, method string, filter *filter, handler func(ctx *WebContext)) *route {
-	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
+func newRoute(path string, method string, filter Filter, handler func(ctx Context)) *route {
+	fmt.Printf("Handler : [%-4s]->{%s}\n", method, path)
 	return &route{Inject: injectNormal, Path: path, Method: method, Filter: filter, Func: handler}
-}
-
-func newBeforeRoute(path, method string, filter *filter, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext)) *route {
-	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
-	return &route{Inject: injectBefore, Path: path, Method: method, Filter: filter, Func: handler, FuncBefore: handlerBefore}
-}
-
-func newAfterRoute(path, method string, filter *filter, handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) *route {
-	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
-	return &route{Inject: injectAfter, Path: path, Method: method, Filter: filter, Func: handler, FuncAfter: handlerAfter}
-}
-
-func newBeforeAfterRoute(path, method string, filter *filter, handlerBefore func(ctx *WebContext), handler func(ctx *WebContext), handlerAfter func(ctx *WebContext)) *route {
-	fmt.Printf("Handler : [%s]->{%s}\n", method, path)
-	return &route{Inject: injectBeforeAfter, Path: path, Method: method, Filter: filter, Func: handler, FuncBefore: handlerBefore, FuncAfter: handlerAfter}
 }

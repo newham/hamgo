@@ -46,12 +46,6 @@ func stringToFloat64(str string, must float64) float64 {
 }
 
 func printLogo() {
-	logo := "     __    __\n" +
-		"    /  /  /  / _______    _________    _______        \n" +
-		"   /  /__/  / /  ___  \\  /  __ __  \\  /  _____\\    \n" +
-		"  /   __   / /  /__/  / /  / // /  / /  / ____  _____ \n" +
-		" /  /  /  / /  /  /  / /  / // /  / /  /__/  / / _  / \n" +
-		"/__/  /__/ /__/  /__/ /__/ // /__/ /________/ /____/  \n" +
-		">>hamgo>> (%s)\n\n"
+	logo := "H A M G O v%s\n\n"
 	fmt.Printf(logo, VERSION)
 }
