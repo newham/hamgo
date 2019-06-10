@@ -1,7 +1,6 @@
 package hamgo
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -43,9 +42,4 @@ func stringToFloat64(str string, must float64) float64 {
 		return must
 	}
 	return value
-}
-
-func printLogo() {
-	logo := "H A M G O v%s\n\n"
-	fmt.Printf(logo, VERSION)
 }

@@ -37,8 +37,8 @@ type fileLogger struct {
 const (
 	defaultFilePath     = "./app.log"
 	defaultWriteBufTime = 1000        //ms
-	defaultWriteBufSize = 1 * 1024    //B
-	defaultFileMaxSize  = 1024 * 1024 //B
+	defaultWriteBufSize = 1 * 1024    //KB
+	defaultFileMaxSize  = 1024 * 1024 //MB
 	defaultConsole      = true
 	defaultFormat       = "[%Title] [%Time] [%File] %Text"
 	logTitleDebug       = "Debug"
@@ -57,60 +57,60 @@ const (
 	confFormatText      = "%Text"
 )
 
-func newLogger(filePath string) {
-	logger := &fileLogger{
-		FilePath:    filePath,
-		fileFolder:  currentPath(filePath),
-		Format:      defaultFormat,
-		console:     true,
-		buf:         new(bytes.Buffer),
-		mutex:       new(sync.Mutex),
-		fileMaxSize: defaultFileMaxSize,
-		fileSize:    0,
-		bufTime:     time.Duration(defaultWriteBufTime),
-		bufSize:     defaultWriteBufSize}
+func setLog(filePath string) {
+	var fileLog *fileLogger
+	//set log by conf
+	if Conf != nil {
+		fileLog = &fileLogger{
+			FilePath:    Conf.DefaultString(confFilePath, defaultFilePath),
+			fileFolder:  currentPath(Conf.DefaultString(confFilePath, defaultFilePath)),
+			Format:      Conf.DefaultString(confFormat, defaultFormat),
+			console:     Conf.DefaultBool(confConsole, defaultConsole),
+			buf:         new(bytes.Buffer),
+			mutex:       new(sync.Mutex),
+			fileMaxSize: Conf.DefaultInt64(confFileMaxSize, defaultFileMaxSize) * 1024,
+			fileSize:    0,
+			bufTime:     time.Duration(Conf.DefaultInt64(confBufTime, defaultWriteBufTime)),
+			bufSize:     Conf.DefaultInt(confBufSize, defaultWriteBufSize) * 1024}
+	} else {
+		if filePath == "" {
+			filePath = defaultFilePath
+		}
+		//set by manual
+		fileLog = &fileLogger{
+			FilePath:    filePath,
+			fileFolder:  currentPath(filePath),
+			Format:      defaultFormat,
+			console:     true,
+			buf:         new(bytes.Buffer),
+			mutex:       new(sync.Mutex),
+			fileMaxSize: defaultFileMaxSize,
+			fileSize:    0,
+			bufTime:     time.Duration(defaultWriteBufTime),
+			bufSize:     defaultWriteBufSize}
+	}
 	//create a thread to write buf to log file
-	go logger.writeBuf()
+	go fileLog.writeBuf()
 	//listen exit signal
-	go logger.onExit()
+	go fileLog.onExit()
 
-	Log = logger
-}
-
-func newLoggerByConf() {
-	logger := &fileLogger{
-		FilePath:    Conf.DefaultString(confFilePath, defaultFilePath),
-		fileFolder:  currentPath(Conf.DefaultString(confFilePath, defaultFilePath)),
-		Format:      Conf.DefaultString(confFormat, defaultFormat),
-		console:     Conf.DefaultBool(confConsole, defaultConsole),
-		buf:         new(bytes.Buffer),
-		mutex:       new(sync.Mutex),
-		fileMaxSize: Conf.DefaultInt64(confFileMaxSize, defaultFileMaxSize) * 1024,
-		fileSize:    0,
-		bufTime:     time.Duration(Conf.DefaultInt64(confBufTime, defaultWriteBufTime)),
-		bufSize:     Conf.DefaultInt(confBufSize, defaultWriteBufSize) * 1024}
-	//create a thread to write buf to log file
-	go logger.writeBuf()
-	//listen exit signal
-	go logger.onExit()
-
-	Log = logger
+	Log = fileLog
 }
 
 func (log *fileLogger) Error(format string, a ...interface{}) {
-	log.writeAndPrint("Error", format, a...)
+	log.writeAndPrint(logTitleError, format, a...)
 }
 
 func (log *fileLogger) Info(format string, a ...interface{}) {
-	log.writeAndPrint("Info ", format, a...)
+	log.writeAndPrint(logTitleInfo, format, a...)
 }
 
 func (log *fileLogger) Debug(format string, a ...interface{}) {
-	log.writeAndPrint("Debug", format, a...)
+	log.writeAndPrint(logTitleDebug, format, a...)
 }
 
 func (log *fileLogger) Warn(format string, a ...interface{}) {
-	log.writeAndPrint("Warn ", format, a...)
+	log.writeAndPrint(logTitleWarn, format, a...)
 }
 
 func (log *fileLogger) writeBuf() {
@@ -138,10 +138,6 @@ func (log *fileLogger) writeBuf() {
 }
 
 func (log *fileLogger) writeAndPrint(title, format string, a ...interface{}) {
-	// _, fileName, lineNum, _ := runtime.Caller(2)
-	// stmp := time.Now().Format("2006-01-02 15:04:05")
-	// var line string
-	// line = fmt.Sprintf("[%-5s] [%s] [%s:%d] %s\n", title, stmp, fileName, lineNum, fmt.Sprintf(format, a...))
 	line := log.format(title, fmt.Sprintf(format, a...))
 
 	if log.console {

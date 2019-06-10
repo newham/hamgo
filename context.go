@@ -285,12 +285,12 @@ func checkValueByTag(formName, formValue, check string) error {
 				return newError(checkTagErrorNotNull)
 			}
 		case checkTagTel:
-			if m, _ := regexp.MatchString(`^(\(\d{3,4}-)|\d{3.4}-)?\d{7,8}$`, formValue); !m {
+			if m, _ := regexp.MatchString(`^(\(\d{3,4}-)|\d{3.4}-)`+`?\d{7,8}$`, formValue); !m {
 				return newError(checkTagErrorTel)
 			}
 		case checkTagPhone:
 			m1, _ := regexp.MatchString(`^(1[3|4|5|8][0-9]\d{4,8})$`, formValue)
-			m2, _ := regexp.MatchString(`^(\(\d{3,4}-)|\d{3.4}-)?\d{7,8}$`, formValue)
+			m2, _ := regexp.MatchString(`^(\(\d{3,4}-)|\d{3.4}-)`+`?\d{7,8}$`, formValue)
 			if !m1 && !m2 {
 				return newError(checkTagErrorPhone)
 			}

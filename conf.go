@@ -36,9 +36,12 @@ type config struct {
 //Conf : user can get config items
 var Conf configInterface
 
-func newConfig(configFile string) {
+func setConfig(configFile string) {
 	if configFile == "" {
 		configFile = defaultConfFile
+	}
+	if !isFileExist(configFile) {
+		return
 	}
 	config := &config{configFile, make(map[string]string)}
 	if err := config.Prase(); err != nil {

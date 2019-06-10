@@ -6,7 +6,7 @@ import "time"
 func Test_Debug(t *testing.T) {
 	logFile := "./test.log"
 	deleteFile(logFile)
-	newLogger(logFile)
+	setLog(logFile)
 	for i := 0; i < 10000; i++ {
 		Log.Debug("test:%d", i)
 		time.Sleep(10)

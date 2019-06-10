@@ -14,8 +14,8 @@ import (
 
 const (
 	second                = 1
-	minute                = 60
-	hour                  = 60 * 60
+	minute                = 60 * second
+	hour                  = 60 * minute
 	defaultSessionMaxTime = hour
 	confSessionMaxTime    = "session_max_time"
 )
@@ -206,9 +206,12 @@ func (pder *provider) SessionUpdate(sid string) error {
 
 var sessions *sessionManager
 
-func newSession(maxlifetime int64) {
+func setSession(maxlifetime int64) {
 	pder.sessions = make(map[string]*list.Element, 0)
 	registSessionProvider("memory", pder)
 	sessions, _ = newSessionManager("memory", "gosessionid", maxlifetime)
 	go sessions.GC()
+}
+
+type SessionStore struct {
 }

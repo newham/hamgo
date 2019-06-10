@@ -34,7 +34,6 @@ func Logout(ctx hamgo.Context) {
 }
 
 func Index(ctx hamgo.Context) {
-	println("/index/")
 	println("model:" + ctx.PathParam("model"))
 	println("id:" + ctx.PathParam("id"))
 	ctx.WriteString(hamgo.Conf.String("index"))
@@ -69,7 +68,7 @@ func JsonFromData(ctx hamgo.Context) {
 
 func Page(ctx hamgo.Context) {
 	ctx.PutData("Title", "Hello World")
-	ctx.HTML("view/index.html", "view/title.tmpl")
+	ctx.HTML("example/view/index.html", "example/view/title.tmpl")
 }
 
 func Session(ctx hamgo.Context) {

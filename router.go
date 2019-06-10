@@ -7,23 +7,17 @@ import (
 )
 
 const (
-	injectNormal      = 1
-	injectBefore      = 2
-	injectAfter       = 3
-	injectBeforeAfter = 4
 	filterMethodError = 5
 	filter404Error    = 6
-	filterOk          = 7
 )
 
 type route struct {
 	http.Handler
-	Inject           int
 	Path             string
 	Method           string
 	W                http.ResponseWriter
 	R                *http.Request
-	Filter           Filter
+	Filters          []Filter
 	Func             func(ctx Context)
 	PathKey          []string
 	HTTPErrorHandler func(ctx Context)
@@ -62,14 +56,14 @@ func (route *route) doBaseFilter(rw http.ResponseWriter, r *http.Request) bool {
 }
 
 func (route *route) doUserFilter(ctx Context) bool {
-	if route.Filter != nil {
-		//not in anno url , do handler
-		if !route.Filter.IsAnnoURL(route.Path) && !route.Filter.DoFilter(ctx) {
+	if isAnnoURL(route.Path, ctx.Method()) {
+		return true
+	}
+	for _, filter := range route.Filters {
+		if !filter.DoFilter(ctx) {
 			//not pass , return false
 			return false
 		}
-		//pass , return true
-		return true
 	}
 	//not set filter , pass
 	return true
@@ -88,7 +82,7 @@ func (route *route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	route.Func(ctx)
 }
 
-func newRoute(path string, method string, filter Filter, handler func(ctx Context)) *route {
+func newRoute(path string, method string, filters []Filter, handler func(ctx Context)) *route {
 	fmt.Printf("Handler : [%-4s]->{%s}\n", method, path)
-	return &route{Inject: injectNormal, Path: path, Method: method, Filter: filter, Func: handler}
+	return &route{Path: path, Method: method, Filters: filters, Func: handler}
 }

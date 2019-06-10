@@ -3,6 +3,7 @@ package hamgo
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -26,20 +27,30 @@ type Server interface {
 	Head(path string, handler func(ctx Context)) Server
 	//static folder
 	Static(folder string) Server
+	//favicon ico
+	Favicon(filePath string) Server
 	//common handler
 	Handler(path string, handler func(ctx Context), method string) Server
 	AllHandler(path string, handler func(ctx Context)) Server
 	//set filter
-	Filter(handler func(ctx Context) bool) Filter
+	AddFilter(handler func(ctx Context) bool) Server
+	AddAnnoURL(url string, methods ...string) Server
 	//error handler
 	HTTPErrorHandler(status int, handler func(ctx Context)) Server
 }
 
 //webServer : a web server implements Server interface
 type webServer struct {
-	port   string
-	mux    *http.ServeMux
-	filter Filter
+	port    string
+	mux     *http.ServeMux
+	filters []Filter
+}
+
+var annoURLs []annoURL
+
+type annoURL struct {
+	url    string
+	method string
 }
 
 //NewServer : creat a web server
@@ -57,7 +68,7 @@ func (s *webServer) RunAt(port string) error {
 //Run : server run at default port 8080
 func (s *webServer) Run() error {
 	if Conf != nil {
-		return s.RunAt(Conf.DefaultString("port", defaultPort))
+		return s.RunAt(Conf.DefaultString(confPort, defaultPort))
 	}
 	return s.RunAt(defaultPort)
 }
@@ -99,30 +110,63 @@ func (s *webServer) Head(path string, handler func(ctx Context)) Server {
 
 //Static :
 func (s *webServer) Static(folder string) Server {
+	if !isFileExist(folder) {
+		panic("static folder not exist")
+	}
 	s.mux.Handle("/"+folder+"/", http.StripPrefix("/"+folder+"/", http.FileServer(http.Dir(folder))))
 	return s
 }
 
-//Handler :
+//Favicon : set "/favicon.ico"
+func (s *webServer) Favicon(filePath string) Server {
+	if !isFileExist(filePath) {
+		panic("favicon.ico path not exist")
+	}
+	faviconUrl := "/favicon.ico"
+	s.AddAnnoURL(faviconUrl, http.MethodPost)
+	s.Get(faviconUrl, func(ctx Context) {
+		ctx.File(filePath)
+	})
+	return s
+}
+
+//Handler : method like "POST,GET...,DELETE"
 func (s *webServer) Handler(path string, handler func(ctx Context), method string) Server {
-	r := newRoute(path, method, s.filter, handler)
+	r := newRoute(path, method, s.filters, handler)
 	s.mux.Handle(newPath(path).Route(), r)
 	return s
 }
 
-//HandlerAll :
+//HandlerAll : handel all method
 func (s *webServer) AllHandler(path string, handler func(ctx Context)) Server {
 	method := fmt.Sprintf("%s,%s,%s,%s,%s", http.MethodGet, http.MethodPost, http.MethodHead, http.MethodDelete, http.MethodPut)
 	return s.Handler(path, handler, method)
 }
 
-//Filter : true is pass filter , false is not pass
-func (s *webServer) Filter(handler func(ctx Context) bool) Filter {
-	s.filter = newFilter(handler)
-	return s.filter
+//AddFilter : add a filter , true is pass filter , false is not pass
+func (s *webServer) AddFilter(handler func(ctx Context) bool) Server {
+	s.filters = append(s.filters, newFilter(handler))
+	return s
+}
+
+//AddAnnoURL : add a url can pass filter
+func (s *webServer) AddAnnoURL(url string, methods ...string) Server {
+	annoURLs = append(annoURLs, annoURL{url, strings.ToUpper(strings.Join(methods, ","))})
+	return s
 }
 
 //HTTPErrorHandler :
 func (s *webServer) HTTPErrorHandler(status int, handler func(ctx Context)) Server {
 	return s
+}
+
+//IsAnnoURL : check if a url is AnnoURL
+func isAnnoURL(path, method string) bool {
+	for _, annoURL := range annoURLs {
+		if strings.HasPrefix(path, annoURL.url) && strings.Contains(annoURL.method, strings.ToUpper(method)) {
+			//hase anno , pass it ,return true
+			return true
+		}
+	}
+	return false
 }
