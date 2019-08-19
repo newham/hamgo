@@ -52,7 +52,7 @@ type Context interface {
 	WriteBytes(b []byte)
 	WriteString(str string)
 	Text(code int)
-	JSON(code int) error
+	JSON(code int, b []byte) error
 	JSONFrom(code int, data interface{}) error
 	JSONString(code int, data string) error
 	DataHTML(data interface{}, filenames ...string)
@@ -116,14 +116,10 @@ func (ctx *webContext) Text(code int) {
 }
 
 //JSON :
-func (ctx *webContext) JSON(code int) error {
+func (ctx *webContext) JSON(code int, b []byte) error {
 	ctx.Code(code)
 	ctx.w.WriteHeader(ctx.statusCode)
-	b, err := json.Marshal(ctx.data)
-	if err != nil {
-		return err
-	}
-	_, err = ctx.w.Write(b)
+	_, err := ctx.w.Write(b)
 	return err
 }
 
