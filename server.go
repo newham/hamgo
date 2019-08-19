@@ -113,6 +113,7 @@ func (s *webServer) Static(folder string) Server {
 	if !isFileExist(folder) {
 		panic("static folder not exist")
 	}
+	s.AddAnnoURL("/" + folder + "/")
 	s.mux.Handle("/"+folder+"/", http.StripPrefix("/"+folder+"/", http.FileServer(http.Dir(folder))))
 	return s
 }

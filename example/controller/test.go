@@ -12,23 +12,27 @@ const (
 )
 
 func Login(ctx hamgo.Context) {
-	println("/login/")
 	user := ctx.PathParam("user")
 	password := ctx.PathParam("password")
 	if user == "admin" && password == "123456" {
-		ctx.GetSession().Set(USER_SESSION, user)
+		err := ctx.GetSession().Set(USER_SESSION, user)
+		if err != nil {
+			print(err.Error())
+		}
 		ctx.WriteString("login success")
 		ctx.Text(200)
+		hamgo.Log.Info("%s login success", user)
 	} else {
 		ctx.WriteString("login failed")
 		ctx.Text(400)
+		hamgo.Log.Error("%s login failed", user)
 	}
 
 }
 
 func Logout(ctx hamgo.Context) {
 	hamgo.Log.Info("logout:%s", ctx.GetSession().Get(USER_SESSION))
-	ctx.GetSession().Delete(USER_SESSION)
+	ctx.DeleteSession()
 	ctx.WriteString("logout success")
 	ctx.Text(200)
 }
@@ -41,6 +45,9 @@ func Index(ctx hamgo.Context) {
 }
 
 func Filter(ctx hamgo.Context) bool {
+	user := ctx.GetSession().Get(USER_SESSION).(string)
+	print(user)
+
 	if ctx.GetSession().Get(USER_SESSION) != nil {
 		return true
 	}

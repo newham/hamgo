@@ -61,6 +61,7 @@ type Context interface {
 	PathParam(key string) string
 	FormFile(fileName string) (multipart.File, *multipart.FileHeader, error)
 	GetSession() Session
+	DeleteSession()
 	BindForm(obj interface{}) map[string]error
 	BindJSON(obj interface{}) error
 	HTML(filenames ...string)
@@ -181,6 +182,11 @@ func (ctx *webContext) FormFile(fileName string) (multipart.File, *multipart.Fil
 //GetSession :
 func (ctx *webContext) GetSession() Session {
 	return sessions.SessionStart(ctx.w, ctx.r)
+}
+
+//DeleteSession :
+func (ctx *webContext) DeleteSession() {
+	sessions.SessionDestroy(ctx.w, ctx.r)
 }
 
 //BindForm : use reflect to bind form-values to object

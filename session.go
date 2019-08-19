@@ -77,7 +77,6 @@ func (manager *sessionManager) SessionDestroy(w http.ResponseWriter, r *http.Req
 	expiration := time.Now()
 	cookie = &http.Cookie{Name: manager.cookieName, Path: "/", HttpOnly: true, Expires: expiration, MaxAge: -1}
 	http.SetCookie(w, cookie)
-
 }
 
 type sessionProvider interface {
