@@ -2,6 +2,7 @@ package hamgo
 
 import (
 	"strconv"
+	"strings"
 )
 
 func int64ToString(i int64) string {
@@ -42,4 +43,8 @@ func stringToFloat64(str string, must float64) float64 {
 		return must
 	}
 	return value
+}
+
+func getFileName(path string) string {
+	return path[strings.LastIndex(path, "/")+1:]
 }

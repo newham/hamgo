@@ -66,6 +66,7 @@ type Context interface {
 	BindJSON(obj interface{}) error
 	HTML(filenames ...string)
 	File(filename string)
+	Attachment(filename string)
 	PutData(key string, data interface{})
 	R() *http.Request
 	W() http.ResponseWriter
@@ -231,6 +232,12 @@ func (ctx *webContext) HTML(filenames ...string) {
 
 //File :
 func (ctx *webContext) File(filename string) {
+	http.ServeFile(ctx.w, ctx.r, filename)
+}
+
+//Attachment :
+func (ctx *webContext) Attachment(filename string) {
+	ctx.w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", getFileName(filename)))
 	http.ServeFile(ctx.w, ctx.r, filename)
 }
 
