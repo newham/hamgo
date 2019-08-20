@@ -53,7 +53,7 @@ func Filter(ctx hamgo.Context) bool {
 	}
 	ctx.PutData("code", 401)
 	ctx.PutData("msg", "Unauthorized")
-	ctx.JSON(401)
+	ctx.JSON(401, nil)
 	hamgo.Log.Error("401,%s", "Unauthorized")
 	return false
 }
@@ -65,7 +65,7 @@ func Hello(ctx hamgo.Context) {
 
 func Json(ctx hamgo.Context) {
 	ctx.PutData("say", "hello world")
-	ctx.JSON(200)
+	ctx.JSON(200, nil)
 }
 
 func JsonFromData(ctx hamgo.Context) {

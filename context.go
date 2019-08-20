@@ -120,6 +120,9 @@ func (ctx *webContext) Text(code int) {
 func (ctx *webContext) JSON(code int, b []byte) error {
 	ctx.Code(code)
 	ctx.w.WriteHeader(ctx.statusCode)
+	if b == nil {
+		b, _ = json.Marshal(ctx.data)
+	}
 	_, err := ctx.w.Write(b)
 	return err
 }
