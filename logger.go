@@ -36,7 +36,7 @@ type fileLogger struct {
 
 const (
 	defaultFilePath     = "./app.log"
-	defaultWriteBufTime = 1000        //ms
+	defaultWriteBufTime = 30          //s
 	defaultWriteBufSize = 1 * 1024    //KB
 	defaultFileMaxSize  = 1024 * 1024 //MB
 	defaultConsole      = true
@@ -70,7 +70,7 @@ func setLog(filePath string) {
 			mutex:       new(sync.Mutex),
 			fileMaxSize: Conf.DefaultInt64(confFileMaxSize, defaultFileMaxSize) * 1024,
 			fileSize:    0,
-			bufTime:     time.Duration(Conf.DefaultInt64(confBufTime, defaultWriteBufTime)),
+			bufTime:     time.Second * time.Duration(Conf.DefaultInt64(confBufTime, defaultWriteBufTime)),
 			bufSize:     Conf.DefaultInt(confBufSize, defaultWriteBufSize) * 1024}
 	} else {
 		if filePath == "" {
@@ -86,7 +86,7 @@ func setLog(filePath string) {
 			mutex:       new(sync.Mutex),
 			fileMaxSize: defaultFileMaxSize,
 			fileSize:    0,
-			bufTime:     time.Duration(defaultWriteBufTime),
+			bufTime:     time.Second * time.Duration(defaultWriteBufTime),
 			bufSize:     defaultWriteBufSize}
 	}
 	//create a thread to write buf to log file
