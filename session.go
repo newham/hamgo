@@ -163,6 +163,7 @@ func (pder *provider) SessionRead(sid string, maxTime int64) (Session, error) {
 			session.refresh()
 			return session, nil
 		}
+		pder.SessionDestroy(sid)
 		return nil, errors.New("timeout")
 	}
 	return pder.SessionInit(sid)
