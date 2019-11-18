@@ -181,6 +181,9 @@ func (ctx *webContext) FormFile(fileName string) (multipart.File, *multipart.Fil
 
 //GetSession :
 func (ctx *webContext) GetSession() Session {
+	if sessions == nil {
+		panic("use session by properties or config first")
+	}
 	return sessions.SessionStart(ctx.w, ctx.r)
 }
 

@@ -15,7 +15,7 @@ func New(properties Properties) Server {
 func NewByConf(configFile string) Server {
 	//set server by config
 	setConfig(configFile)
-	return New(Properties{"", 0})
+	return New(Properties{"", Conf.DefaultInt64("session_max_time", 0)})
 }
 
 type Properties struct {

@@ -45,12 +45,11 @@ func Index(ctx hamgo.Context) {
 }
 
 func Filter(ctx hamgo.Context) bool {
-	user := ctx.GetSession().Get(USER_SESSION).(string)
-	print(user)
 
-	if ctx.GetSession().Get(USER_SESSION) != nil {
+	if ctx.GetSession() != nil && ctx.GetSession().Get(USER_SESSION) != nil {
 		return true
 	}
+
 	ctx.PutData("code", 401)
 	ctx.PutData("msg", "Unauthorized")
 	ctx.JSON(401, nil)

@@ -1,9 +1,9 @@
 package hamgo
 
 import (
-	"container/list"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,27 +42,25 @@ func (manager *sessionManager) sessionID() string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-func (manager *sessionManager) SessionStart(w http.ResponseWriter, r *http.Request) (session Session) {
+func (manager *sessionManager) SessionStart(w http.ResponseWriter, r *http.Request) Session {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 	cookie, err := r.Cookie(manager.cookieName)
-	if err != nil || cookie.Value == "" {
-		sid := manager.sessionID()
-		session, _ = manager.provider.SessionInit(sid)
-		cookie := http.Cookie{Name: manager.cookieName, Value: url.QueryEscape(sid), Path: "/", HttpOnly: true, MaxAge: int(manager.maxlifetime)}
-		http.SetCookie(w, &cookie)
-	} else {
+	//read from store
+	if err == nil && cookie.Value != "" {
 		sid, _ := url.QueryUnescape(cookie.Value)
-		session, _ = manager.provider.SessionRead(sid)
+		session, err := manager.provider.SessionRead(sid, manager.maxlifetime)
+		if err == nil {
+			return session
+		}
 	}
-	return
-}
+	//init a new
+	sid := manager.sessionID()
+	session, _ := manager.provider.SessionInit(sid)
+	cookie = &http.Cookie{Name: manager.cookieName, Value: url.QueryEscape(sid), Path: "/", HttpOnly: true, MaxAge: int(manager.maxlifetime)}
+	http.SetCookie(w, cookie)
 
-func (manager *sessionManager) GC() {
-	manager.lock.Lock()
-	defer manager.lock.Unlock()
-	manager.provider.SessionGC(manager.maxlifetime)
-	time.AfterFunc(time.Duration(manager.maxlifetime), func() { manager.GC() })
+	return session
 }
 
 //Destroy sessionid
@@ -81,9 +79,8 @@ func (manager *sessionManager) SessionDestroy(w http.ResponseWriter, r *http.Req
 
 type sessionProvider interface {
 	SessionInit(sid string) (Session, error)
-	SessionRead(sid string) (Session, error)
+	SessionRead(sid string, maxTime int64) (Session, error)
 	SessionDestroy(sid string) error
-	SessionGC(maxLifeTime int64)
 }
 
 var provides = make(map[string]sessionProvider)
@@ -107,9 +104,9 @@ type Session interface {
 	Get(key interface{}) interface{}  //get session value
 	Delete(key interface{}) error     //delete session value
 	SessionID() string                //back current sessionID
+	leftTime(timeout int64) int64     //get this session's timeout
+	refresh()                         //update created time
 }
-
-var pder = &provider{list: list.New()}
 
 type sessionStore struct {
 	sid          string                      //session id
@@ -119,12 +116,10 @@ type sessionStore struct {
 
 func (st *sessionStore) Set(key, value interface{}) error {
 	st.value[key] = value
-	pder.SessionUpdate(st.sid)
 	return nil
 }
 
 func (st *sessionStore) Get(key interface{}) interface{} {
-	pder.SessionUpdate(st.sid)
 	if v, ok := st.value[key]; ok {
 		return v
 	}
@@ -133,7 +128,6 @@ func (st *sessionStore) Get(key interface{}) interface{} {
 
 func (st *sessionStore) Delete(key interface{}) error {
 	delete(st.value, key)
-	pder.SessionUpdate(st.sid)
 	return nil
 }
 
@@ -141,76 +135,60 @@ func (st *sessionStore) SessionID() string {
 	return st.sid
 }
 
+func (st *sessionStore) leftTime(timeout int64) int64 {
+	return st.timeAccessed.Unix() + timeout - time.Now().Unix()
+}
+
+func (st *sessionStore) refresh() {
+	st.timeAccessed = time.Now()
+}
+
 type provider struct {
-	lock     sync.Mutex               //used for lock
-	sessions map[string]*list.Element //used for inner store
-	list     *list.List               //used for gc
+	lock     sync.Mutex         //used for lock
+	sessions map[string]Session //used for inner store
 }
 
 func (pder *provider) SessionInit(sid string) (Session, error) {
 	pder.lock.Lock()
 	defer pder.lock.Unlock()
-	v := make(map[interface{}]interface{}, 0)
-	newsess := &sessionStore{sid: sid, timeAccessed: time.Now(), value: v}
-	element := pder.list.PushBack(newsess)
-	pder.sessions[sid] = element
+	newsess := &sessionStore{sid: sid, timeAccessed: time.Now(), value: map[interface{}]interface{}{}}
+	pder.sessions[sid] = newsess
 	return newsess, nil
 }
 
-func (pder *provider) SessionRead(sid string) (Session, error) {
-	if element, ok := pder.sessions[sid]; ok {
-		return element.Value.(*sessionStore), nil
+func (pder *provider) SessionRead(sid string, maxTime int64) (Session, error) {
+	if session, ok := pder.sessions[sid]; ok {
+		println(session.leftTime(maxTime))
+		if session.leftTime(maxTime) > 0 {
+			session.refresh()
+			return session, nil
+		}
+		return nil, errors.New("timeout")
 	}
-	sess, err := pder.SessionInit(sid)
-	return sess, err
+	return pder.SessionInit(sid)
 }
 
 func (pder *provider) SessionDestroy(sid string) error {
-	if element, ok := pder.sessions[sid]; ok {
+	if _, ok := pder.sessions[sid]; ok {
 		delete(pder.sessions, sid)
-		pder.list.Remove(element)
 		return nil
 	}
-	return nil
-}
-
-func (pder *provider) SessionGC(maxlifetime int64) {
-	pder.lock.Lock()
-	defer pder.lock.Unlock()
-
-	for {
-		element := pder.list.Back()
-		if element == nil {
-			break
-		}
-		if (element.Value.(*sessionStore).timeAccessed.Unix() + maxlifetime) < time.Now().Unix() {
-			pder.list.Remove(element)
-			delete(pder.sessions, element.Value.(*sessionStore).sid)
-		} else {
-			break
-		}
-	}
+	return errors.New("no sid")
 }
 
 func (pder *provider) SessionUpdate(sid string) error {
 	pder.lock.Lock()
 	defer pder.lock.Unlock()
-	if element, ok := pder.sessions[sid]; ok {
-		element.Value.(*sessionStore).timeAccessed = time.Now()
-		pder.list.MoveToFront(element)
+	if session, ok := pder.sessions[sid]; ok {
+		session.refresh()
 		return nil
 	}
-	return nil
+	return errors.New("no sid")
 }
 
 var sessions *sessionManager
 
 func setSession(maxlifetime int64) {
-	pder.sessions = make(map[string]*list.Element, 0)
-	registSessionProvider("memory", pder)
+	registSessionProvider("memory", &provider{sessions: map[string]Session{}})
 	sessions, _ = newSessionManager("memory", "gosessionid", maxlifetime)
-	go sessions.GC()
-}
-
-type SessionStore struct {
 }
