@@ -158,7 +158,6 @@ func (pder *provider) SessionInit(sid string) (Session, error) {
 
 func (pder *provider) SessionRead(sid string, maxTime int64) (Session, error) {
 	if session, ok := pder.sessions[sid]; ok {
-		println(session.leftTime(maxTime))
 		if session.leftTime(maxTime) > 0 {
 			session.refresh()
 			return session, nil
