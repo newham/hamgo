@@ -1,10 +1,12 @@
 package hamgo
 
 //New : create a Server by Properties
-func New(properties Properties) Server {
+func New(properties *Properties) Server {
 	//set server by Properties
-	setLog(properties.LogFile)
-	setSession(properties.SessionMaxLifeTime)
+	if properties != nil {
+		setLog(properties.LogFile)
+		setSession(properties.SessionMaxLifeTime)
+	}
 	//set logo
 	printLogo()
 	//return
@@ -15,7 +17,7 @@ func New(properties Properties) Server {
 func NewByConf(configFile string) Server {
 	//set server by config
 	setConfig(configFile)
-	return New(Properties{"", Conf.DefaultInt64("session_max_time", 0)})
+	return New(&Properties{"", Conf.DefaultInt64("session_max_time", 0)})
 }
 
 type Properties struct {
