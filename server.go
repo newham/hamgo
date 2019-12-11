@@ -32,6 +32,7 @@ type Server interface {
 	//common handler
 	Handler(path string, handler func(ctx Context), method string) Server
 	AllHandler(path string, handler func(ctx Context)) Server
+	HandleFunc(path string, handler func(w http.ResponseWriter, r *http.Request)) Server
 	//set filter
 	AddFilter(handler func(ctx Context) bool) Server
 	AddAnnoURL(url string, methods ...string) Server
@@ -142,6 +143,12 @@ func (s *webServer) Handler(path string, handler func(ctx Context), method strin
 func (s *webServer) AllHandler(path string, handler func(ctx Context)) Server {
 	method := fmt.Sprintf("%s,%s,%s,%s,%s", http.MethodGet, http.MethodPost, http.MethodHead, http.MethodDelete, http.MethodPut)
 	return s.Handler(path, handler, method)
+}
+
+//HandleFunc : handel normal func
+func (s *webServer) HandleFunc(path string, handler func(w http.ResponseWriter, r *http.Request)) Server {
+	s.GetMux().HandleFunc(path, handler)
+	return s
 }
 
 //AddFilter : add a filter , true is pass filter , false is not pass
