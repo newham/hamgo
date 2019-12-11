@@ -105,7 +105,7 @@ type Session interface {
 	Delete(key interface{}) error     //delete session value
 	SessionID() string                //back current sessionID
 	leftTime(timeout int64) int64     //get this session's timeout
-	refresh()                         //update created time
+	Refresh()                         //update created time
 }
 
 type sessionStore struct {
@@ -139,7 +139,7 @@ func (st *sessionStore) leftTime(timeout int64) int64 {
 	return st.timeAccessed.Unix() + timeout - time.Now().Unix()
 }
 
-func (st *sessionStore) refresh() {
+func (st *sessionStore) Refresh() {
 	st.timeAccessed = time.Now()
 }
 
@@ -159,7 +159,7 @@ func (pder *provider) SessionInit(sid string) (Session, error) {
 func (pder *provider) SessionRead(sid string, maxTime int64) (Session, error) {
 	if session, ok := pder.sessions[sid]; ok {
 		if session.leftTime(maxTime) > 0 {
-			session.refresh()
+			session.Refresh()
 			return session, nil
 		}
 		pder.SessionDestroy(sid)
@@ -180,7 +180,7 @@ func (pder *provider) SessionUpdate(sid string) error {
 	pder.lock.Lock()
 	defer pder.lock.Unlock()
 	if session, ok := pder.sessions[sid]; ok {
-		session.refresh()
+		session.Refresh()
 		return nil
 	}
 	return errors.New("no sid")
