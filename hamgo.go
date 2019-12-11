@@ -20,6 +20,10 @@ func NewByConf(configFile string) Server {
 	return New(&Properties{"", Conf.DefaultInt64("session_max_time", 0)})
 }
 
+func NewProperties(logFile string, sessionMaxLifeTime int64) *Properties {
+	return &Properties{logFile, sessionMaxLifeTime}
+}
+
 type Properties struct {
 	LogFile            string
 	SessionMaxLifeTime int64
