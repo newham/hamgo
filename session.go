@@ -43,7 +43,7 @@ type Session interface {
 	Delete(key interface{}) error     //delete session value
 	SessionID() string                //back current sessionID
 	LeftTime() int64                  //get this session's timeout
-	Refresh()                         //update created time
+	refresh()                         //update created time
 }
 
 type session struct {
@@ -78,7 +78,7 @@ func (s *session) LeftTime() int64 {
 	return s.timeAccessed.Unix() + s.timeout - time.Now().Unix()
 }
 
-func (s *session) Refresh() {
+func (s *session) refresh() {
 	s.timeAccessed = time.Now()
 }
 
@@ -86,7 +86,7 @@ type sessionStorage interface {
 	InitSession(sid string, timeout int64) (Session, error)
 	ReadSession(sid string) (Session, error)
 	DestroySession(sid string) error
-	UpdateSession(sid string) error
+	RefreshSession(oldSid, newSid string) (Session, error)
 }
 
 type memorySessionStorage struct {
@@ -106,7 +106,6 @@ func (msp *memorySessionStorage) InitSession(sid string, timeout int64) (Session
 func (msp *memorySessionStorage) ReadSession(sid string) (Session, error) {
 	if session, ok := msp.sessions[sid]; ok {
 		if session.LeftTime() > 0 {
-			msp.UpdateSession(sid)
 			return session, nil
 		}
 		msp.DestroySession(sid)
@@ -123,20 +122,22 @@ func (msp *memorySessionStorage) DestroySession(sid string) error {
 	return errors.New("no sid")
 }
 
-func (pder *memorySessionStorage) UpdateSession(sid string) error {
+func (pder *memorySessionStorage) RefreshSession(oldSid, newSid string) (Session, error) {
 	pder.lock.Lock()
 	defer pder.lock.Unlock()
-	if session, ok := pder.sessions[sid]; ok {
-		session.Refresh()
-		pder.sessions[sid] = session
-		return nil
+	if session, ok := pder.sessions[oldSid]; ok {
+		delete(pder.sessions, oldSid)
+		session.refresh()
+		pder.sessions[newSid] = session
+		return session, nil
 	}
-	return errors.New("no sid")
+	return nil, errors.New("no sid")
 }
 
 type SessionManager interface {
 	SessionStart(w http.ResponseWriter, r *http.Request) Session
 	SessionDestroy(w http.ResponseWriter, r *http.Request)
+	SessionRefresh(w http.ResponseWriter, r *http.Request) Session
 }
 
 type sessionManager struct {
@@ -160,6 +161,25 @@ func (sm *sessionManager) sessionID() string {
 		return ""
 	}
 	return base64.URLEncoding.EncodeToString(b)
+}
+
+func (sm *sessionManager) SessionRefresh(w http.ResponseWriter, r *http.Request) (session Session) {
+	sm.lock.Lock()
+	defer sm.lock.Unlock()
+	cookie, err := r.Cookie(sm.cookieName)
+	sid := sm.sessionID()
+	//read from store
+	if err == nil && cookie.Value != "" {
+		oldSid, _ := url.QueryUnescape(cookie.Value)
+		session, _ = sm.provider.RefreshSession(oldSid, sid)
+	} else {
+		//init a new
+		session, _ = sm.provider.InitSession(sid, sm.maxlifetime)
+	}
+	cookie = &http.Cookie{Name: sm.cookieName, Value: url.QueryEscape(sid), Path: "/", HttpOnly: true, MaxAge: int(sm.maxlifetime)}
+	http.SetCookie(w, cookie)
+
+	return session
 }
 
 func (sm *sessionManager) SessionStart(w http.ResponseWriter, r *http.Request) Session {

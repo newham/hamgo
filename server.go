@@ -62,7 +62,7 @@ func newServer() Server {
 //RunAt : let server run at port
 func (s *webServer) RunAt(port string) error {
 	s.port = ":" + port
-	fmt.Printf("\nStarted at : %s\n\n", port)
+	fmt.Printf("\nRun at port: %s\n\n", port)
 	return http.ListenAndServe(s.port, s.mux)
 }
 

@@ -48,26 +48,32 @@ const (
 )
 
 type Context interface {
-	FormValue(key string) string
+	//resp body
 	WriteBytes(b []byte)
 	WriteString(str string)
-	Text(code int)
-	JSON(code int, b []byte) error
-	JSONFrom(code int, data interface{}) error
-	JSONString(code int, data string) error
 	DataHTML(data interface{}, filenames ...string)
 	Redirect(path string)
 	Code(statusCode int)
 	PathParam(key string) string
 	FormFile(fileName string) (multipart.File, *multipart.FileHeader, error)
+	//session
 	GetSession() Session
 	DeleteSession()
+	RefreshSession() Session
+	//form
+	FormValue(key string) string
 	BindForm(obj interface{}) map[string]error
 	BindJSON(obj interface{}) error
+	//resp
+	Text(code int)
+	JSON(code int, b []byte) error
+	JSONFrom(code int, data interface{}) error
+	JSONString(code int, data string) error
 	HTML(filenames ...string)
 	File(filename string)
 	Attachment(filename string)
 	PutData(key string, data interface{})
+	//web context
 	R() *http.Request
 	W() http.ResponseWriter
 	Method() string
@@ -190,6 +196,11 @@ func (ctx *webContext) GetSession() Session {
 //DeleteSession :
 func (ctx *webContext) DeleteSession() {
 	sessions.SessionDestroy(ctx.w, ctx.r)
+}
+
+//DeleteSession :
+func (ctx *webContext) RefreshSession() Session {
+	return sessions.SessionRefresh(ctx.w, ctx.r)
 }
 
 //BindForm : use reflect to bind form-values to object

@@ -1,9 +1,10 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/newham/hamgo"
 	"github.com/newham/hamgo/example/controller"
-	"net/http"
 )
 
 func main() {
@@ -12,9 +13,10 @@ func main() {
 	server := hamgo.NewByConf("app.conf")
 	server.Static("public")
 	server.Favicon("public/go.ico")
-	server.AddFilter(controller.Filter).AddAnnoURL("/login", http.MethodGet, http.MethodPost)
+	server.AddFilter(controller.Filter).AddAnnoURL("/login", http.MethodGet, http.MethodPost).AddAnnoURL("/login/form", "POST").AddAnnoURL("/page", "GET")
 	server.Get("/hello", controller.Hello)
 	server.Get("/login/=user/=password", controller.Login)
+	server.Post("/login/form", controller.LoginByForm)
 	server.Get("/logout", controller.Logout)
 	server.Get("/index/=model/=id", controller.Index)
 	server.Get("/index/hello/=model/=id", controller.Hello)

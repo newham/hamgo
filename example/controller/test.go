@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/newham/hamgo"
@@ -10,6 +11,19 @@ import (
 const (
 	USER_SESSION string = "userSession"
 )
+
+func LoginByForm(ctx hamgo.Context) {
+	usr := ctx.FormValue("usr")
+	pwd := ctx.FormValue("pwd")
+	if usr == "admin" && pwd == "123456" {
+		ctx.GetSession().Set(USER_SESSION, usr)
+		ctx.WriteString("Login Success!")
+		ctx.Redirect("/hello")
+	} else {
+		ctx.WriteString("Login failed!")
+		ctx.Text(200)
+	}
+}
 
 func Login(ctx hamgo.Context) {
 	user := ctx.PathParam("user")
@@ -56,13 +70,16 @@ func Filter(ctx hamgo.Context) bool {
 
 	ctx.PutData("code", 401)
 	ctx.PutData("msg", "Unauthorized")
-	ctx.JSON(401, nil)
+	// ctx.JSON(401, nil)
+	ctx.Redirect("/page")
 	hamgo.Log.Error("401,%s", "Unauthorized")
 	return false
 }
 
 func Hello(ctx hamgo.Context) {
-	ctx.WriteString("Hello World!")
+	session := ctx.RefreshSession()
+	ctx.WriteString("Hello World!\n")
+	ctx.WriteString(fmt.Sprintf("Left Time:%d", session.LeftTime()))
 	ctx.Text(200)
 }
 
@@ -79,7 +96,7 @@ func JsonFromData(ctx hamgo.Context) {
 
 func Page(ctx hamgo.Context) {
 	ctx.PutData("Title", "Hello World")
-	ctx.HTML("example/view/index.html", "example/view/title.tmpl")
+	ctx.HTML("view/index.html", "view/title.tmpl")
 }
 
 func Session(ctx hamgo.Context) {

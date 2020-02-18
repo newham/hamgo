@@ -83,6 +83,6 @@ func (route *route) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 }
 
 func newRoute(path string, method string, filters []Filter, handler func(ctx Context)) *route {
-	fmt.Printf("Handler : [%-4s]->{%s}\n", method, path)
+	fmt.Printf("Handler: [%-4s]->{%s}\n", method, path)
 	return &route{Path: path, Method: method, Filters: filters, Func: handler}
 }
