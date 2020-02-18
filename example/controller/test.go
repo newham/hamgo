@@ -19,6 +19,10 @@ func Login(ctx hamgo.Context) {
 		if err != nil {
 			print(err.Error())
 		}
+		if ctx.Method() == "GET" {
+			ctx.Redirect("/json")
+			return
+		}
 		ctx.WriteString("login success")
 		ctx.Text(200)
 		hamgo.Log.Info("%s login success", user)
@@ -64,6 +68,7 @@ func Hello(ctx hamgo.Context) {
 
 func Json(ctx hamgo.Context) {
 	ctx.PutData("say", "hello world")
+	ctx.PutData("leftTime", ctx.GetSession().LeftTime())
 	ctx.JSON(200, nil)
 }
 
