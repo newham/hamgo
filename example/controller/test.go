@@ -77,10 +77,14 @@ func Filter(ctx hamgo.Context) bool {
 }
 
 func Hello(ctx hamgo.Context) {
-	session := ctx.RefreshSession()
 	ctx.WriteString("Hello World!\n")
-	ctx.WriteString(fmt.Sprintf("Left Time:%d", session.LeftTime()))
+	ctx.WriteString(fmt.Sprintf("Left Time:%d", ctx.GetSession().LeftTime()))
 	ctx.Text(200)
+}
+
+func Refresh(ctx hamgo.Context) {
+	ctx.RefreshSession()
+	ctx.Redirect("/hello")
 }
 
 func Json(ctx hamgo.Context) {

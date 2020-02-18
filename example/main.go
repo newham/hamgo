@@ -22,6 +22,7 @@ func main() {
 	server.Get("/index/hello/=model/=id", controller.Hello)
 	server.Get("/json", controller.Json)
 	server.Get("/page", controller.Page)
+	server.Get("/refresh", controller.Refresh)
 	server.Get("/session", controller.Session)
 	server.Post("/", controller.Index)
 	server.Get("/bind", controller.Bind)
