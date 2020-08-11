@@ -174,14 +174,14 @@ func (log *fileLogger) format(title, text string) string {
 
 	f := log.Format
 	if strings.Contains(f, confFormatTitle) {
-		f = strings.Replace(f, confFormatTitle, fmt.Sprintf("%s", title), -1)
+		f = strings.Replace(f, confFormatTitle, fmt.Sprintf("%-5s", title), -1)
 	}
 	if strings.Contains(f, confFormatFile) {
 		_, fileName, lineNum, _ := runtime.Caller(3)
 		f = strings.Replace(f, confFormatFile, fmt.Sprintf("%s:%d", fileName, lineNum), -1)
 	}
 	if strings.Contains(f, confFormatTime) {
-		stmp := time.Now().Format("2006-01-02 15:04:05")
+		stmp := time.Now().Format("2006/01/02/15:04:05")
 		f = strings.Replace(f, confFormatTime, stmp, -1)
 	}
 	if strings.Contains(f, confFormatText) {

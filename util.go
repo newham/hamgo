@@ -1,6 +1,9 @@
 package hamgo
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -47,4 +50,12 @@ func stringToFloat64(str string, must float64) float64 {
 
 func getFileName(path string) string {
 	return path[strings.LastIndex(path, "/")+1:]
+}
+
+func uuid(len int) string {
+	b := make([]byte, len)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return ""
+	}
+	return base64.URLEncoding.EncodeToString(b)
 }

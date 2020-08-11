@@ -59,7 +59,7 @@ type Context interface {
 	//session
 	GetSession() Session
 	DeleteSession()
-	RefreshSession() Session
+	RefreshSession()
 	//form
 	FormValue(key string) string
 	BindForm(obj interface{}) map[string]error
@@ -190,17 +190,23 @@ func (ctx *webContext) GetSession() Session {
 	if sessions == nil {
 		panic("use session by properties or config first")
 	}
-	return sessions.SessionStart(ctx.w, ctx.r)
+	return sessions.GetSession(ctx.r, ctx.w)
 }
 
 //DeleteSession :
 func (ctx *webContext) DeleteSession() {
-	sessions.SessionDestroy(ctx.w, ctx.r)
+	sessions.DelSession(ctx.r, ctx.w)
 }
 
 //DeleteSession :
-func (ctx *webContext) RefreshSession() Session {
-	return sessions.SessionRefresh(ctx.w, ctx.r)
+func (ctx *webContext) RefreshSession() {
+	sessions.RefreshSession(ctx.r, ctx.w)
+}
+
+var sessions *sessionManager
+
+func setSession(max int) {
+	sessions = &sessionManager{&memorySessionStorage{sessions: map[string]Session{}}, max}
 }
 
 //BindForm : use reflect to bind form-values to object

@@ -16,7 +16,9 @@ func LoginByForm(ctx hamgo.Context) {
 	usr := ctx.FormValue("usr")
 	pwd := ctx.FormValue("pwd")
 	if usr == "admin" && pwd == "123456" {
-		ctx.GetSession().Set(USER_SESSION, usr)
+		session := ctx.GetSession()
+		session.Set(USER_SESSION, usr)
+		hamgo.Log.Info("Login")
 		ctx.WriteString("Login Success!")
 		ctx.Redirect("/hello")
 	} else {
@@ -63,8 +65,8 @@ func Index(ctx hamgo.Context) {
 }
 
 func Filter(ctx hamgo.Context) bool {
-
-	if ctx.GetSession() != nil && ctx.GetSession().Get(USER_SESSION) != nil {
+	session := ctx.GetSession()
+	if session != nil && session.Get(USER_SESSION) != nil {
 		return true
 	}
 

@@ -6,6 +6,9 @@ func New(properties *Properties) Server {
 	if properties != nil {
 		setLog(properties.LogFile)
 		setSession(properties.SessionMaxLifeTime)
+	} else {
+		setLog(defaultFilePath)
+		setSession(defaultSessionMaxTime)
 	}
 	//set logo
 	printLogo()
@@ -17,14 +20,14 @@ func New(properties *Properties) Server {
 func NewByConf(configFile string) Server {
 	//set server by config
 	setConfig(configFile)
-	return New(&Properties{"", Conf.DefaultInt64("session_max_time", 0)})
+	return New(&Properties{"", Conf.DefaultInt("session_max_time", 0)})
 }
 
-func NewProperties(logFile string, sessionMaxLifeTime int64) *Properties {
+func NewProperties(logFile string, sessionMaxLifeTime int) *Properties {
 	return &Properties{logFile, sessionMaxLifeTime}
 }
 
 type Properties struct {
 	LogFile            string
-	SessionMaxLifeTime int64
+	SessionMaxLifeTime int
 }

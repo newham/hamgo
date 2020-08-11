@@ -10,7 +10,8 @@ import (
 func main() {
 	// server :=hamgo.New().UseConfig("./app.conf").UseSession(hamgo.Hour).UseLogger("./lo/app.log").Server()
 	// server := hamgo.New().UseConfig("./app.conf").UseSessionByConf().UseLoggerByConf().Server()
-	server := hamgo.NewByConf("app.conf")
+	// server := hamgo.NewByConf("app.conf")
+	server := hamgo.New(nil)
 	server.Static("public")
 	server.Favicon("public/go.ico")
 	server.AddFilter(controller.Filter).AddAnnoURL("/login", http.MethodGet, http.MethodPost).AddAnnoURL("/login/form", "POST").AddAnnoURL("/page", "GET")

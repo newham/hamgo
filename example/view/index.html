@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-	<title>index page</title>
+    <title>index page</title>
     <link rel="icon" href="/public/go.ico" type="image/x-icon" />
 </head>
+
 <body>
-<h1>this is my web</h1>
-{{template "Title" .}}
-<form method="POST" action="/login/form">
-    <input name="usr" type="text">
-    <input name="pwd" type="password">
-    <button type="submit">login</button>
-</form>
+    <h1>this is my web</h1>
+    {{template "Title" .}}
+    <form method="POST" action="/login/form">
+        <input name="usr" type="text" value="admin">
+        <input name="pwd" type="password" value="123456">
+        <button type="submit">login</button>
+    </form>
 </body>
+
 </html>

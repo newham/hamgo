@@ -251,17 +251,22 @@ server := hamgo.UseConfig("./log/app.log").Server()
 ### [2] config
 app.conf ( config file )
 ```go
+port = 8087
+
+# second
+session_max_time = 1800
+
 # logger
 log_console = true
-log_file = "./log/app.log"
+log_file = "log/app.log"
 # KB
 log_file_max_size = 50
 # KB
 log_buf_size = 10
-# ms
-log_buf_time = 2000
-# format
-log_format = "[%Title] [%Time] [%File] %Text"
+# s
+log_buf_time = 10
+# log format, example : [Error] 2018-01-01 14:35:16 /xxxx/test.go:75 -> 401,Unauthorized
+log_format = "[%Title] %Time %File : %Text"
 ```
 
 ### [3] use
