@@ -52,6 +52,7 @@ type Context interface {
 	WriteBytes(b []byte)
 	WriteString(str string)
 	DataHTML(data interface{}, filenames ...string)
+	JSONHTML(data interface{}, filenames ...string)
 	Redirect(path string)
 	Code(statusCode int)
 	PathParam(key string) string
@@ -162,6 +163,18 @@ func (ctx *webContext) DataHTML(data interface{}, filenames ...string) {
 		return
 	}
 	t.Execute(ctx.w, data)
+}
+
+//JSONHTML :
+func (ctx *webContext) JSONHTML(data interface{}, filenames ...string) {
+	t, err := template.ParseFiles(filenames...)
+	if err != nil {
+		ctx.WriteString("prase template failed! check file path")
+		ctx.Text(500)
+		return
+	}
+	jsonB, _ := json.Marshal(data)
+	t.Execute(ctx.w, string(jsonB))
 }
 
 //Redirect :
