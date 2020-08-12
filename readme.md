@@ -98,18 +98,14 @@ import (
 )
 
 func main() {
-    server := hamgo.New().Server()
-    server.GetBefore("/hello", BeforeHello, Hello)
+    server := hamgo.New(nil)
+    server.Get("/hello", BeforeHello, Hello)
     server.RunAt("8080")
 }
 
 func Hello(ctx *hamgo.WebContext) {
     ctx.WriteString("Hello World!")
     ctx.Text(200)
-}
-
-func BeforeHello(ctx *hamgo.WebContext) {
-    ctx.WriteString("Do Before Hello!\n")
 }
 
 ```
@@ -119,7 +115,6 @@ go run main.go
 ```
 You will see at [http://localhost:8080/hello](http://localhost:8080/hello)
 ```
-Do Before Hello!
 Hello World!
 ```
 
@@ -133,7 +128,7 @@ import (
 )
 
 func main() {
-    server := hamgo.New().Server()
+    server := hamgo.New(nil)
     server.Get("/page", Page)
     server.RunAt("8080")
 }

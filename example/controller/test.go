@@ -31,10 +31,7 @@ func Login(ctx hamgo.Context) {
 	user := ctx.PathParam("user")
 	password := ctx.PathParam("password")
 	if user == "admin" && password == "123456" {
-		err := ctx.GetSession().Set(USER_SESSION, user)
-		if err != nil {
-			print(err.Error())
-		}
+		ctx.GetSession().Set(USER_SESSION, user)
 		if ctx.Method() == "GET" {
 			ctx.Redirect("/json")
 			return
@@ -80,7 +77,7 @@ func Filter(ctx hamgo.Context) bool {
 
 func Hello(ctx hamgo.Context) {
 	ctx.WriteString("Hello World!\n")
-	ctx.WriteString(fmt.Sprintf("Left Time:%d", ctx.GetSession().LeftTime()))
+	ctx.WriteString(fmt.Sprintf("Session Left Time:%d", ctx.GetSession().LeftTime()))
 	ctx.Text(200)
 }
 

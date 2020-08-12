@@ -203,12 +203,6 @@ func (ctx *webContext) RefreshSession() {
 	sessions.RefreshSession(ctx.r, ctx.w)
 }
 
-var sessions *sessionManager
-
-func setSession(max int) {
-	sessions = &sessionManager{&memorySessionStorage{sessions: map[string]Session{}}, max}
-}
-
 //BindForm : use reflect to bind form-values to object
 func (ctx *webContext) BindForm(obj interface{}) map[string]error {
 	errs := make(map[string]error)

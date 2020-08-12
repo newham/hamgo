@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var sessions *sessionManager
+
 //********** Session **********
 
 const (
@@ -19,11 +21,11 @@ const (
 )
 
 type Session interface {
-	Set(key, value interface{}) error //set session value
-	Get(key interface{}) interface{}  //get session value
-	Delete(key interface{}) error     //delete session value
-	ID() string                       //back current sessionID
-	LeftTime() int64                  //get this session's timeout
+	Set(key, value interface{})      //set session value
+	Get(key interface{}) interface{} //get session value
+	Delete(key interface{})          //delete session value
+	ID() string                      //back current sessionID
+	LeftTime() int64                 //get this session's timeout
 	newID()
 	refreshTime()
 }
@@ -39,9 +41,8 @@ func newSession(max int) Session {
 	return &session{sid: uuid(32), value: map[interface{}]interface{}{}, timeAccessed: time.Now(), timeout: max}
 }
 
-func (s *session) Set(key, value interface{}) error {
+func (s *session) Set(key, value interface{}) {
 	s.value[key] = value
-	return nil
 }
 
 func (s *session) Get(key interface{}) interface{} {
@@ -51,9 +52,8 @@ func (s *session) Get(key interface{}) interface{} {
 	return nil
 }
 
-func (s *session) Delete(key interface{}) error {
+func (s *session) Delete(key interface{}) {
 	delete(s.value, key)
-	return nil
 }
 
 func (s *session) ID() string {
@@ -149,4 +149,8 @@ func getSessionID(r *http.Request) string {
 		return ""
 	}
 	return id
+}
+
+func setSession(max int) {
+	sessions = &sessionManager{&memorySessionStorage{sessions: map[string]Session{}}, max}
 }

@@ -14,7 +14,7 @@ func main() {
 	server := hamgo.New(nil)
 	server.Static("public")
 	server.Favicon("public/go.ico")
-	server.AddFilter(controller.Filter).AddAnnoURL("/login", http.MethodGet, http.MethodPost).AddAnnoURL("/login/form", "POST").AddAnnoURL("/page", "GET")
+	server.AddFilter(controller.Filter).AddAnnoURL("/login", http.MethodGet, http.MethodPost).AddAnnoURL("/login/form", http.MethodPost).AddAnnoURL("/page", "GET")
 	server.Get("/hello", controller.Hello)
 	server.Get("/login/=user/=password", controller.Login)
 	server.Post("/login/form", controller.LoginByForm)
