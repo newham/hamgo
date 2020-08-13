@@ -3,6 +3,7 @@ package hamgo
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"io"
 	"strconv"
 	"strings"
@@ -58,4 +59,12 @@ func uuid(len int) string {
 		return ""
 	}
 	return base64.URLEncoding.EncodeToString(b)
+}
+
+func JSONToString(data interface{}) string {
+	b, err := json.Marshal(data)
+	if err != nil {
+		return ""
+	}
+	return string(b)
 }
