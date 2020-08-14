@@ -65,6 +65,7 @@ type Context interface {
 	FormValue(key string) string
 	BindForm(obj interface{}) map[string]error
 	BindJSON(obj interface{}) error
+	BindMap() (map[string]interface{}, error)
 	//resp
 	Text(code int)
 	JSON(code int, b []byte) error
@@ -80,6 +81,12 @@ type Context interface {
 	W() http.ResponseWriter
 	Method() string
 	Body() ([]byte, error)
+	//switch method
+	OnMethod(method string, f func(Context)) Context
+	OnPOST(f func(Context)) Context
+	OnGET(f func(Context)) Context
+	OnDELETE(f func(Context)) Context
+	OnPUT(f func(Context)) Context
 }
 
 //webContext :
@@ -262,6 +269,13 @@ func (ctx *webContext) BindJSON(obj interface{}) error {
 	return json.Unmarshal(j, obj)
 }
 
+//BindMap() :
+func (ctx *webContext) BindMap() (map[string]interface{}, error) {
+	m := map[string]interface{}{}
+	err := ctx.BindJSON(&m)
+	return m, err
+}
+
 //HTML :
 func (ctx *webContext) HTML(filenames ...string) {
 	ctx.DataHTML(ctx.data, filenames...)
@@ -301,6 +315,34 @@ func (ctx *webContext) Method() string {
 //Body() :
 func (ctx *webContext) Body() ([]byte, error) {
 	return ioutil.ReadAll(ctx.r.Body)
+}
+
+//OnMethod() :
+func (ctx *webContext) OnMethod(method string, f func(Context)) Context {
+	if ctx.Method() == method {
+		f(ctx)
+	}
+	return ctx
+}
+
+//OnPOST() :
+func (ctx *webContext) OnPOST(f func(Context)) Context {
+	return ctx.OnMethod(http.MethodPost, f)
+}
+
+//OnGET() :
+func (ctx *webContext) OnGET(f func(Context)) Context {
+	return ctx.OnMethod(http.MethodGet, f)
+}
+
+//OnDELETE() :
+func (ctx *webContext) OnDELETE(f func(Context)) Context {
+	return ctx.OnMethod(http.MethodDelete, f)
+}
+
+//OnPUT() :
+func (ctx *webContext) OnPUT(f func(Context)) Context {
+	return ctx.OnMethod(http.MethodPut, f)
 }
 
 func checkValueByTag(formName, formValue, check string) error {
