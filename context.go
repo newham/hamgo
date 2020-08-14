@@ -69,6 +69,7 @@ type Context interface {
 	//resp
 	Text(code int)
 	JSON(code int, b []byte) error
+	JSONOk() error
 	JSONFrom(code int, data interface{}) error
 	JSONString(code int, data string) error
 	JSONMsg(code int, key string, data interface{}) error
@@ -140,6 +141,11 @@ func (ctx *webContext) JSON(code int, b []byte) error {
 	}
 	_, err := ctx.w.Write(b)
 	return err
+}
+
+//JSONOk :
+func (ctx *webContext) JSONOk() error {
+	return ctx.JSON(http.StatusOK, nil)
 }
 
 //JSONFrom :
