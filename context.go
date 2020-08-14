@@ -70,7 +70,7 @@ type Context interface {
 	JSON(code int, b []byte) error
 	JSONFrom(code int, data interface{}) error
 	JSONString(code int, data string) error
-	JSONMsg(code int, key interface{}, value interface{}) error
+	JSONMsg(code int, key string, data interface{}) error
 	HTML(filenames ...string)
 	File(filename string)
 	Attachment(filename string)
@@ -156,8 +156,9 @@ func (ctx *webContext) JSONString(code int, data string) error {
 }
 
 //JSONMsg :
-func (ctx *webContext) JSONMsg(code int, key interface{}, value interface{}) error {
-	return ctx.JSONFrom(code, map[interface{}]interface{}{key: value})
+func (ctx *webContext) JSONMsg(code int, key string, data interface{}) error {
+	ctx.PutData(key, data)
+	return ctx.JSON(code, nil)
 }
 
 //DataHTML :
