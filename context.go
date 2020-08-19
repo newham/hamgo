@@ -57,10 +57,11 @@ type Context interface {
 	Code(statusCode int)
 	PathParam(key string) string
 	FormFile(fileName string) (multipart.File, *multipart.FileHeader, error)
-	//session
+	//session&Cookie
 	GetSession() Session
 	DeleteSession()
 	RefreshSession()
+	SetCookie(key, value, path string)
 	//form
 	FormValue(key string) string
 	BindForm(obj interface{}) map[string]error
@@ -234,6 +235,12 @@ func (ctx *webContext) DeleteSession() {
 //DeleteSession :
 func (ctx *webContext) RefreshSession() {
 	sessions.RefreshSession(ctx.r, ctx.w)
+}
+
+//SetCookie :
+func (ctx *webContext) SetCookie(key, value, path string) {
+	cookie := &http.Cookie{Name: key, Value: value, Path: path}
+	http.SetCookie(ctx.W(), cookie)
 }
 
 //BindForm : use reflect to bind form-values to object

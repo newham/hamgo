@@ -159,6 +159,9 @@ func (s *webServer) AddFilter(handler func(ctx Context) bool) Server {
 
 //AddAnnoURL : add a url can pass filter
 func (s *webServer) AddAnnoURL(url string, methods ...string) Server {
+	if methods == nil || len(methods) == 0 {
+		methods = []string{"POST", "GET", "HEAD", "DELETE", "PUT"}
+	}
 	annoURLs = append(annoURLs, annoURL{url, strings.ToUpper(strings.Join(methods, ","))})
 	return s
 }
